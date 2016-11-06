@@ -1,0 +1,20 @@
+{
+    "mappings": {
+        "_default_": {
+            "_all": {"enabled": false},
+            "dynamic": "strict",
+            "properties": {
+                "prov": {"type": "keyword"},
+                "@message": {"type": "text"},
+                "@timestamp": {"type": "date"},
+                "@version": {"type": "short"},
+                "document": {"type": "keyword"},
+                "instance": {"type": "keyword"},
+                "@source_host": {"type": "keyword"},
+                "host": {"type": "keyword"},
+                "port": {"type": "integer"},
+                "@fields": {"type": "object", "enabled": false}
+            }
+        }
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "dynamic": "strict",
+    "_all": {"enabled": false},
+    "properties": {
+        "prov": {"type": "keyword"},
+        "@message": {"type": "text"},
+        "@timestamp": {"type": "date"},
+        "@version": {"type": "short"},
+        "document": {"type": "keyword"},
+        "instance": {"type": "keyword"},
+        "@source_host": {"type": "keyword"},
+        "host": {"type": "keyword"},
+        "port": {"type": "integer"},
+        "@fields": {"type": "object", "enabled": false}
+    }
+}
