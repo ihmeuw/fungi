@@ -12,19 +12,9 @@
                 "instance": {"type": "keyword"},
                 "@source_host": {"type": "keyword"},
                 "host": {"type": "keyword"},
-                "port": {"type": "integer"}
-            },
-            "dynamic_templates": [
-                {
-                    "@fields_template": {
-                        "path_match": "@fields",
-                        "mapping": {
-                            "store": true,
-                            "index": false
-                        }
-                    }
-                }
-            ]
+                "port": {"type": "integer"},
+                "@fields": {"store": true, "index": false}
+            }
         }
     }
 }
