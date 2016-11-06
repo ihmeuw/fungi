@@ -13,7 +13,7 @@
                 "@source_host": {"type": "keyword"},
                 "host": {"type": "keyword"},
                 "port": {"type": "integer"},
-                "@fields": {"store": true, "index": false}
+                "@fields": {"type": "nested", "store": true, "index": false}
             }
         }
     }
