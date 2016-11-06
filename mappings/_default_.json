@@ -1,24 +1,25 @@
 {
-  "_all": {"enabled": false}, 
-  "properties":
-    "prov": {"type": "keyword"}, 
-    "@message": {"type": "text"}, 
-    "@timestamp": {"type": "date"}, 
-    "@version": {"type": "short"}, 
-    "document": {"type": "keyword"}, 
-    "instance": {"type": "keyword"}, 
-    "@source_host": {"type": "keyword"}, 
-    "host": {"type": "keyword"}, 
-    "port": {"type": "integer"}, 
-  "dynamic_templates": [
-    {
-      "@fields_template": {
-        "path_match": "@fields", 
-        "mapping": {
-          "store": "yes", 
-          "index": "no"
+    "_all": {"enabled": false},
+    "properties": {
+        "prov": {"type": "keyword"},
+        "@message": {"type": "text"},
+        "@timestamp": {"type": "date"},
+        "@version": {"type": "short"},
+        "document": {"type": "keyword"},
+        "instance": {"type": "keyword"},
+        "@source_host": {"type": "keyword"},
+        "host": {"type": "keyword"},
+        "port": {"type": "integer"}
+    }, 
+    "dynamic_templates": [
+        {
+            "@fields_template": {
+                "path_match": "@fields",
+                "mapping": {
+                    "store": "yes",
+                    "index": "no"
+                }
+            }
         }
-      }
-    }
-  ]
+    ]
 }
