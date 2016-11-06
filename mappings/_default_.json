@@ -10,5 +10,15 @@
     "@source_host": {"type": "keyword"}, 
     "host": {"type": "keyword"}, 
     "port": {"type": "integer"}, 
-    "@fields": {"type": "nested"}
+  "dynamic_templates": [
+    {
+      "@fields_template": {
+        "path_match": "@fields", 
+        "mapping": {
+          "store": "yes", 
+          "index": "no"
+        }
+      }
+    }
+  ]
 }
