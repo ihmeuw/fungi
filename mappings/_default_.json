@@ -17,8 +17,8 @@
             "@fields_template": {
                 "path_match": "@fields",
                 "mapping": {
-                    "store": "yes",
-                    "index": "no"
+                    "store": true,
+                    "index": false
                 }
             }
         }
