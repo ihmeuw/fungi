@@ -1,8 +1,8 @@
 {
     "mappings": {
-        "provlog": {
+        "_default_": {
             "_all": {"enabled": false},
-            "dynamic": false,
+            "dynamic": "strict",
             "properties": {
                 "prov": {"type": "keyword"},
                 "@message": {"type": "text"},
@@ -12,7 +12,8 @@
                 "instance": {"type": "keyword"},
                 "@source_host": {"type": "keyword"},
                 "host": {"type": "keyword"},
-                "port": {"type": "integer"}
+                "port": {"type": "integer"},
+                "@fields": {"type": "object", "enabled": false}
             }
         }
     }

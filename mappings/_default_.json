@@ -1,5 +1,5 @@
 {
-    "dynamic": false,
+    "dynamic": "strict",
     "_all": {"enabled": false},
     "properties": {
         "prov": {"type": "keyword"},
@@ -10,6 +10,7 @@
         "instance": {"type": "keyword"},
         "@source_host": {"type": "keyword"},
         "host": {"type": "keyword"},
-        "port": {"type": "integer"}
+        "port": {"type": "integer"},
+        "@fields": {"type": "object", "enabled": false}
     }
 }
