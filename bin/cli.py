@@ -30,7 +30,8 @@ __modname__ = "provda_sandbox.bin.cli"
 QUERY_FUNCTION_NAMES = {"fetch"}
 
 
-def fetch(es_client, doctype, num_docs, **match_kwargs):
+# This is the most basic search; one for document type
+def fetch(es_client, doctype, num_docs, index="_all"):
     """
     Perform Elasticsearch TERM-level query, fetching matching documents.
 
@@ -38,7 +39,7 @@ def fetch(es_client, doctype, num_docs, **match_kwargs):
         to use for query
     :param str doctype: name for type of document(s) to fetch
     :param int num_docs: maximum number of document hits to return
-    :param dict match_kwargs: keywords and arguments to use in query
+    :param str index: name for index in which to search, default all
     :raises ValueError: if doctype is an unknown
     """
     # TODO: finish docstring.
@@ -48,11 +49,10 @@ def fetch(es_client, doctype, num_docs, **match_kwargs):
         raise ValueError("Unknown doctype: {}".format(doctype))
     doctype_query_string = "{}{}".format(DOCTYPE_KEY_PREFIX, doctype)
     # TODO: properly construct Search instance.
-    search = Search(using=es_client, match=match_kwargs)
-    # TODO: determine type and properly filter result; are hits ordered by score?
-    # TODO: improve efficiency here.
-    # TODO: determine return type
-    return list(search)[:num_docs]
+    search = Search(using=es_client, doc_type=doctype, index=index)
+    # TODO: Properly filter result; are hits ordered by score?
+    # TODO: empty query is logical here, but is it valid?
+    return list(search.query().execute())[:num_docs]
 
 
 

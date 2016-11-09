@@ -23,4 +23,4 @@ ES = Elasticsearch()
 
 if __name__ == "__main__":
     """ Command should be of the form: esprov <operation> <type> <query> """
-    return ES.
+    pass
