@@ -1,10 +1,30 @@
 """ Package-level constants and setup for Elasticsearch-based provenance """
 
-import os
+import logging
+import sys
 
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-07"
-__modname__ = "provda_sandbox.esprov.__init__"
+__modified__ = "2016-11-10"
+__modname__ = "esprov.esprov.__init__"
+
+
+LOGGING_LEVEL = logging.INFO
+LOGGING_MESSAGE_FORMAT = \
+    "[%(asctime)s] {%(module)s:%(funcName)s:%(lineno)d} %(levelname)s - " \
+    "%(message)s"
+
+
+def setup_logger():
+    logger = logging.getLogger(__modname__.split(".")[-2])
+    logger.setLevel(LOGGING_LEVEL)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(LOGGING_LEVEL)
+    handler.setFormatter(logging.Formatter(fmt=LOGGING_MESSAGE_FORMAT))
+    logger.addHandler(handler)
+    return logger
+
+
+LOGGER = setup_logger()
 
 
 # TODO: allow these to be configurable, favoring filepath (like airflow.cfg).
@@ -12,7 +32,6 @@ __modname__ = "provda_sandbox.esprov.__init__"
 # Connect to Elasticsearch.
 HOST = "localhost"
 PORT = 9200
-CONNECTION_BASESTRING = "http://{host}/{port}".format(host=HOST, port=PORT)
 
 # Name for provenance document type within index(es) to search
 DOCTYPE = "logs"
@@ -59,7 +78,7 @@ DOCUMENT_TYPENAMES = {
 }
 
 
-DOCTYPE_KEY_PREFIX = "prov:"
+DOCTYPE_KEY = "prov"
 ID_ATTRIBUTE_NAME = "instance"
 
 

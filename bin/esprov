@@ -2,27 +2,34 @@
 # -*- coding: utf-8 -*-
 """ Executable for working with provenance-oriented data in Elasticsearch. """
 
+import logging
+
 from elasticsearch import Elasticsearch
 
 from cli import CLIFactory
 from esprov import HOST, PORT
 
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-07"
+__modified__ = "2016-11-10"
 __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
+__modname__ = "esprov.bin.esprov"
 
 
 if __name__ == "__main__":
     """ Command should be of the form: esprov <operation> <type> <query> """
 
+    logger = logging.getLogger(__modname__)
+
     parser = CLIFactory.get_parser()
     args = parser.parse_args()
+    logger.info("Args: {}".format(args))
 
     # TODO: handle host configurability.
 
     es_client = Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
+    logger.info("Querying elasticsearch...")
     result = args.func(es_client, args)
 
     for hit in result:

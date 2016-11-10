@@ -1,15 +1,17 @@
 """ Provenance-in-Elasticsearch query functions. """
 
+import logging
+
 from elasticsearch_dsl import Search
 
-from esprov import DOCTYPE_KEY_PREFIX, DOCUMENT_TYPENAMES
+from esprov import DOCTYPE_KEY, DOCUMENT_TYPENAMES
 
 __author__ = "Vince Reuter"
 __modified__ = "2016-11-09"
 __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
-__modname__ = "provda_sandbox.bin.cli"
+__modname__ = "esprov.esprov.functions"
 
 
 __all__ = ["fetch"]
@@ -28,6 +30,10 @@ def fetch(es_client, args):
         limit is negative
     """
 
+    funcpath = "{}.{}".format(__modname__, "fetch")
+    logger = logging.getLogger(funcpath)
+    logger.debug("In: {}".format(funcpath))
+
     # TODO: ensure docstring correctness.
 
     # First variety of fetch is for noun (agent, activity, entity).
@@ -42,13 +48,14 @@ def fetch(es_client, args):
 
     # TODO: properly construct Search instance.
     search = Search(using=es_client, index=args.index)
+    logger.debug("Search: {}".format(search.to_dict()))
 
     # TODO: Properly filter result; are hits ordered by score?
     # TODO: empty query is logical here, but is it valid?
 
     result = \
         list(search.query("match",
-                          **{DOCTYPE_KEY_PREFIX: args.doctype}).execute())
+                          **{DOCTYPE_KEY: args.doctype}).execute())
 
     if args.num_docs is None:
         return result
