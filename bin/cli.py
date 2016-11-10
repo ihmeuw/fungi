@@ -31,8 +31,25 @@ Argument = namedtuple(
     field_names=['flags', 'help', 'action', 'default',
                  'nargs', 'type', 'choices', 'metavar']
 )
-Argument.__new__.__defaults__ = [None] * len(Argument._fields)
+Argument.__new__.__defaults__ = (None, ) * len(Argument._fields)
 
+
+class _Subparser(object):
+    """ Argument parser for specific CLI function """
+
+    def __init__(self, function, argument_names=(), description=""):
+        """
+        Function, argument names, and help text define a CLI subparser.
+
+        :param callable function:
+        :param collections.abc.(str) argument_names: sequence
+        :param str description: subcommand functional description
+        """
+        # TODO: test description derivation from __doc__.
+        self.function = function
+        self.argument_names = argument_names
+        self.description = \
+            description or function.__doc__.strip().split("\n")[0]
 
 
 class CLIFactory(object):
@@ -45,7 +62,7 @@ class CLIFactory(object):
         "index": Argument(flags=("-i", "--index"),
                           help="Index to query",
                           default="_all"),
-        "num_docs": Argument(flags=("-n", "--max"),
+        "num_docs": Argument(flags=("-n", "--num_docs"),
                              help="Limit for number of search hits",
                              type=int)
     }
@@ -78,8 +95,7 @@ class CLIFactory(object):
                 argument = cls.arguments[argument_name]
                 kwargs = {
                     field: getattr(argument, field)
-                    for field in argument._fields
-                    if field != 'flags' and getattr(argument, field)
+                    for field in argument._fields if field != 'flags'
                 }
                 sp.add_argument(*argument.flags, **kwargs)
 
@@ -87,22 +103,3 @@ class CLIFactory(object):
             sp.set_defaults(func=subparser.function)
 
         return parser
-
-
-
-class _Subparser(object):
-    """ Argument parser for specific CLI function """
-
-    def __init__(self, function, argument_names=(), description=""):
-        """
-        Function, argument names, and help text define a CLI subparser.
-
-        :param callable function:
-        :param collections.abc.(str) argument_names: sequence
-        :param str description: subcommand functional description
-        """
-        # TODO: test description derivation from __doc__.
-        self.function = function
-        self.argument_names = argument_names
-        self.description = \
-            description or function.__doc__.strip().split("\n")[0]
