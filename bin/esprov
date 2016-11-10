@@ -2,10 +2,9 @@
 # -*- coding: utf-8 -*-
 """ Executable for working with provenance-oriented data in Elasticsearch. """
 
-import argparse
-
 from elasticsearch import Elasticsearch
 
+from cli import CLIFactory
 
 __author__ = "Vince Reuter"
 __modified__ = "2016-11-07"
@@ -14,13 +13,8 @@ __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
 
 
-ES = Elasticsearch()
-
-
-
-
-
-
 if __name__ == "__main__":
     """ Command should be of the form: esprov <operation> <type> <query> """
-    pass
+    parser = CLIFactory.get_parser()
+    args = parser.parse_args()
+    args.func(Elasticsearch(), args)

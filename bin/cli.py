@@ -1,6 +1,7 @@
 """ Executable for working with provenance-oriented data in Elasticsearch. """
 
 import argparse
+from collections import namedtuple
 
 from elasticsearch_dsl import Search
 
@@ -8,13 +9,14 @@ import esprov
 from esprov import DOCTYPE_KEY_PREFIX
 
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-07"
+__modified__ = "2016-11-09"
 __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
 __modname__ = "provda_sandbox.bin.cli"
 
 
+# TODO: remove notes.
 # Relevant components of query that is sent to ES:
 # 1 -- "Query" (JSON object)
 # 2 -- "Size"
@@ -24,35 +26,57 @@ __modname__ = "provda_sandbox.bin.cli"
 # Others, unsupported here
 # 1 -- "From" --> Offset into results (default 0)
 # 2 -- "Facets" --> Summary information about specific field(s) in data
-# 3 -- "Filter" -- > Special case for when you want to apply filter/query to results not to facets
+# 3 -- "Filter" -- > Special case to apply filter/query to results not facets
 
 
 QUERY_FUNCTION_NAMES = {"fetch"}
 
 
+# Export functions for import *
+__all__ = ["fetch"]
+
+
 # This is the most basic search; one for document type
-def fetch(es_client, doctype, num_docs, index="_all"):
+def fetch(es_client, args):
     """
     Perform Elasticsearch TERM-level query, fetching matching documents.
 
     :param elasticsearch.Elasticsearch es_client: Elasticsearch client
         to use for query
-    :param str doctype: name for type of document(s) to fetch
-    :param int num_docs: maximum number of document hits to return
-    :param str index: name for index in which to search, default all
-    :raises ValueError: if doctype is an unknown
+    :param argparse.Namespace args: arguments parsed from command line
+    :return list[dict]: document hits from query, potentially capped
+    :raises ValueError: if doctype given is unknown, or if document count
+        limit is negative
     """
-    # TODO: finish docstring.
+
+    # TODO: ensure docstring correctness.
+
+    # First variety of fetch is for noun (agent, activity, entity).
+    # The other is the fetch of a relationship.
+    # Let's start with noun.
     # Entity options: activity, agent, entity
+
     # TODO: validate match kwargs based on doctype
-    if doctype not in esprov.DOCUMENT_TYPENAMES:
-        raise ValueError("Unknown doctype: {}".format(doctype))
-    doctype_query_string = "{}{}".format(DOCTYPE_KEY_PREFIX, doctype)
+
+    if args.doctype not in esprov.DOCUMENT_TYPENAMES:
+        raise ValueError("Unknown doctype: {}".format(args.doctype))
+
     # TODO: properly construct Search instance.
-    search = Search(using=es_client, doc_type=doctype, index=index)
+    search = Search(using=es_client, index=args.index)
+
     # TODO: Properly filter result; are hits ordered by score?
     # TODO: empty query is logical here, but is it valid?
-    return list(search.query().execute())[:num_docs]
+
+    result = \
+        list(search.query("match",
+                          **{DOCTYPE_KEY_PREFIX: args.doctype}).execute())
+
+    if args.num_docs is None:
+        return result
+    if args.num_docs < 0:
+        raise ValueError("Invalid max document count: {}".
+                         format(args.num_docs))
+    return result[:args.num_docs]
 
 
 
@@ -60,18 +84,84 @@ def related():
     pass
 
 
-class Subparser(object):
-    """ Argument parser """
-    def __init__(self, function, help_text, argnames):
-        self.function = function
-        self.help_text = help_text
-        self.argnames = argnames
+
+Argument = namedtuple(
+    "Argument",
+    field_names=['flags', 'help', 'action', 'default',
+                 'nargs', 'type', 'choices', 'metavar']
+)
+Argument.__new__.__defaults__ = [None] * len(Argument._fields)
+
 
 
 class CLIFactory(object):
+    """ Factory for CLI subcommand parser """
+
+    # Subcommand-agnostic argument
+    arguments = {
+        "doctype": Argument(flags=("doctype", ),
+                            help="Document type to query"),
+        "index": Argument(flags=("-i", "--index"),
+                          help="Index to query",
+                          default="_all"),
+        "num_docs": Argument(flags=("-n", "--max"),
+                             help="Limit for number of search hits",
+                             type=int)
+    }
+
+    subparsers = (
+        _Subparser(fetch, argument_names=("doctype", "index", "num_docs")),
+    )
+
+    subparser_names = (sub.__name__ for sub in subparsers)
+
+
     @classmethod
     def get_parser(cls):
-        subparsers = (
-            Subparser()
-        )
+        """
+        Create command-line argument parser for a CLI run.
+
+        :return argparse.ArgumentParser: parser for CLI run.
+        """
+
         parser = argparse.ArgumentParser()
+        subparsers = parser.add_subparsers(help="sub-command help",
+                                           dest="subcommand")
+        subparsers.required = True
+
+        for subparser in cls.subparsers:
+            sp = subparsers.add_parser(subparser.function.__name__,
+                                       help=subparser.description)
+
+            for argument_name in subparser.argument_names:
+                argument = cls.arguments[argument_name]
+                kwargs = {
+                    field: getattr(argument, field)
+                    for field in argument._fields
+                    if field != 'flags' and getattr(argument, field)
+                }
+                sp.add_argument(*argument.flags, **kwargs)
+
+            # Allow invocation of subcommand via args.func(args).
+            sp.set_defaults(func=subparser.function)
+
+        return parser
+
+
+
+class _Subparser(object):
+    """ Argument parser for specific CLI function """
+
+    def __init__(self, function, argument_names=(), description=""):
+        """
+        Function, argument names, and help text define a CLI subparser.
+
+        :param callable function:
+        :param collections.abc.(str) argument_names: sequence
+        :param str description: subcommand functional description
+        """
+        # TODO: test description derivation from __doc__.
+        self.function = function
+        self.argument_names = argument_names
+        self.description = \
+            description or function.__doc__.strip().split("\n")[0]
