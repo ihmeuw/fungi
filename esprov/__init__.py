@@ -78,8 +78,10 @@ DOCUMENT_TYPENAMES = {
 }
 
 
+PREFIX_TYPENAME = "prefix"
 DOCTYPE_KEY = "prov"
 ID_ATTRIBUTE_NAME = "instance"
+NAMESPACE_DELIMITER = ":"
 
 
 # TODO: consider putting this in nodes package.

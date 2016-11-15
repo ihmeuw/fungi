@@ -7,7 +7,7 @@ from elasticsearch_dsl import Search
 from esprov import DOCTYPE_KEY, DOCUMENT_TYPENAMES
 
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-09"
+__modified__ = "2016-11-10"
 __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
@@ -15,6 +15,39 @@ __modname__ = "esprov.esprov.functions"
 
 
 __all__ = ["fetch"]
+
+
+# TODO: other use cases to handle and implement.
+# 1 -- For file/DB (entity) (File in provda.process.rst?), agent(s) and/or process(es).
+# 2 -- For agent, fetch influenced Process(es) or generated/used File(s).
+# 3 -- For activity, fetch influenced activities or generated/used File(s).
+# 4 -- Process collection stuff
+
+# 1 --> wasGeneratedBy or used
+# 2 --> wasAssociatedWith (from Process perspective)
+# 3 -->
+# 4 --> hadMember for component processes, then jump to process-level queries from there.
+# This should inform the design decision for representing process collection.
+# The design decision around process collection relates to whether a collection
+# should be linked directly to entities as its components are (potentially more/redundant edges), and whether
+# or not the components should be represented at all (more nodes).
+
+
+
+def since():
+    """ Determine the stages that have run within past given time """
+    # TODO: start with assumption of days, then can add flexibility via optional arguments or other subfunctions.
+    # TODO: the return should be the user script and affected directories or something thereabouts.
+
+    pass
+
+
+
+def modifier():
+    """ Determine the most recent process/agent to modify file. """
+    # TODO: want user and process, could do each individually/with required discrete argument, or with separate subfunctions.
+    pass
+
 
 
 # This is the most basic search; one for document type
