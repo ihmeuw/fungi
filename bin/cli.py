@@ -114,8 +114,6 @@ class CLIFactory(object):
         _Subparser(list_stages, argument_names=LIST_STAGES_PARAMETERS)
     )
 
-    subparser_names = (sub.__name__ for sub in subparsers)
-
 
     @classmethod
     def get_parser(cls):
