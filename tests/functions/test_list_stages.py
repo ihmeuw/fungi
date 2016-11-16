@@ -30,10 +30,41 @@ class TestListStages:
         pass
 
 
-    def test_mixed_period_lag(self):
+    def test_multi_period_lag(self):
+        pass
+
+
+    def test_specific_index(self):
         pass
 
 
     def test_limit_results(self):
         pass
 
+
+    def test_limit_results_single_period_lag(self):
+        pass
+
+
+    def test_limit_results_multi_period_lag(self):
+        pass
+
+
+    def test_specific_index_single_period_lag(self):
+        pass
+
+
+    def test_specific_index_multi_period_lag(self):
+        pass
+
+
+    def test_limit_results_specific_index_no_lag(self):
+        pass
+
+
+    def test_limit_results_specific_index_single_lag(self):
+        pass
+
+
+    def test_limit_results_specific_index_multi_lag(self):
+        pass

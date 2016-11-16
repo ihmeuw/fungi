@@ -63,20 +63,22 @@ class CLIFactory(object):
     # Subcommand-agnostic argument
     arguments = {
 
+        # Basic arguments shared and valid for each CLI function
+        "index": Argument(
+            flags=("-i", "--index"),
+            help="Index to query",
+            default="_all"
+        ),
+        "num_docs": Argument(
+            flags=("-n", "--num_docs"),
+            help="Limit for number of search hits",
+            type=int
+        ),
+
         # "fetch" family of arguments
         "doctype": Argument(
                 flags=("--doctype", ),
                 help="Document type to query"
-        ),
-        "index": Argument(
-                flags=("-i", "--index"),
-                help="Index to query",
-                default="_all"
-        ),
-        "num_docs": Argument(
-                flags=("-n", "--num_docs"),
-                help="Limit for number of search hits",
-                type=int
         ),
 
         # "list_stages" family of arguments
@@ -109,13 +111,14 @@ class CLIFactory(object):
 
     }
 
-    BASE_FETCH_PARAMS = ("doctype", "index", "num_docs")
+    # Shared and valid for all CLI functions.
+    BASE_ARGS = ("index", "num_docs")
 
     subparsers = (
         _Subparser(fetch,
-                   argument_names=BASE_FETCH_PARAMS),
+                   argument_names=(BASE_ARGS + ("doctype", ))),
         _Subparser(list_stages,
-                   argument_names=(BASE_FETCH_PARAMS + LIST_STAGES_PARAMETERS))
+                   argument_names=(BASE_ARGS + LIST_STAGES_PARAMETERS))
     )
 
 
