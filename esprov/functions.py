@@ -22,7 +22,7 @@ TIME_CHAR_BY_CLI_PARAM = dict(zip(LIST_STAGES_PARAMETERS,
                                          ES_TIME_CHARACTERS))
 
 
-__all__ = ["fetch", "list_stages", LIST_STAGES_PARAMETERS]
+__all__ = ["fetch", "list_stages", "LIST_STAGES_PARAMETERS"]
 
 
 # TODO: other use cases to handle and implement.
