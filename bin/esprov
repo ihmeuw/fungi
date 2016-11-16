@@ -30,9 +30,9 @@ if __name__ == "__main__":
 
     es_client = Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
     logger.info("Querying elasticsearch...")
+
     result = args.func(es_client, args)
+    logger.debug("%d results", result.count())
 
-    logger.debug("RESULT: %s", str(result))
-
-    for hit in result:
-        print(hit)
+    for hit in result.scan():
+        print(hit.to_dict())

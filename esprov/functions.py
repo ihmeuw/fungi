@@ -58,8 +58,7 @@ def list_stages(es_client, args):
         which to conduct the Elasticsearch query
     :param argparse.Namespace args: binding between parameter name and
         argument value
-    :return collections.abc.Iterable | str: iterable of results or
-        print-ready version
+    :return elasticsearch_dsl.search.Search:
     """
 
     """
@@ -89,10 +88,12 @@ def list_stages(es_client, args):
     record_type_query_data = {ID_ATTRIBUTE_NAME: CODE_STAGE_NAMESPACE_PREFIX}
 
     search = build_search(es_client, index=args.index)
-    results = list(search.query("match", **record_type_query_data).
-                   filter("range", timespan_query_data))
 
-    return finalize_results(results, args.num_docs)
+    query = search.query("match", **record_type_query_data)
+    result = query.filter("range", **timespan_query_data)
+
+    logging.debug("result: %s", type(result))
+    return result
 
 
 
@@ -164,7 +165,7 @@ def fetch(es_client, args):
     :param elasticsearch.Elasticsearch es_client: Elasticsearch client
         to use for query
     :param argparse.Namespace args: arguments parsed from command line
-    :return list[dict]: document hits from query, potentially capped
+    :return elasticsearch_dsl.search.Search: ES client Search instance
     :raises ValueError: if doctype given is unknown, or if document count
         limit is negative
     """
@@ -200,6 +201,9 @@ def fetch(es_client, args):
 
     # TODO: Properly filter result; are hits ordered by score?
     # TODO: empty query is logical here, but is it valid?
+    # TODO: make use of the count() member of Search for testing.
+
     logger.debug("query_mapping: %s", str(query_mapping))
-    results = search.query("match", **query_mapping)
-    return finalize_results(results, num_records=args.num_docs)
+    result = search.query("match", **query_mapping)
+
+    return result

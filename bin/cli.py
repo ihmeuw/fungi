@@ -109,9 +109,13 @@ class CLIFactory(object):
 
     }
 
+    BASE_FETCH_PARAMS = ("doctype", "index", "num_docs")
+
     subparsers = (
-        _Subparser(fetch, argument_names=("doctype", "index", "num_docs")),
-        _Subparser(list_stages, argument_names=LIST_STAGES_PARAMETERS)
+        _Subparser(fetch,
+                   argument_names=BASE_FETCH_PARAMS),
+        _Subparser(list_stages,
+                   argument_names=(BASE_FETCH_PARAMS + LIST_STAGES_PARAMETERS))
     )
 
 
