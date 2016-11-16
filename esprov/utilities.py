@@ -28,11 +28,11 @@ def build_search(es_client, index="_all"):
 
 
 
-def finalize_results(results, num_records, delimiter=None):
+def finalize_results(search, num_records, delimiter=None):
     """
     Limit the results from a search query to the requested number of records.
 
-    :param list results: ES search query results
+    :param elasticsearch_dsl.search.Search search: ES search query
     :param int num_records: number of records at which to cap results
     :param str delimiter: delimiter on which to join resulting elements, if
         text-ready result is what's desired (thus, optional)
@@ -42,14 +42,11 @@ def finalize_results(results, num_records, delimiter=None):
         most obviously, this would occur if a non-string delimiter were given
     """
 
-    if num_records is None:
-        filtered = results
-    elif num_records < 0:
+    if num_records and num_records < 0:
         raise ValueError("Invalid maximum record count: {}".
                          format(num_records))
-    else:
-        logging.debug("Taking first %d of %d results, skipping %d",
-                      num_records, len(results), len(results) - num_records)
-        filtered = results[:num_records]
+
+    results = search.execute()
+    filtered = results[:num_records] if num_records else results
 
     return delimiter.join(filtered) if delimiter is not None else filtered

@@ -157,7 +157,6 @@ def list_modifiers(es_client, args):
 
 
 
-# This is the most basic search; one for document type
 def fetch(es_client, args):
     """
     Perform Elasticsearch TERM-level query, fetching matching documents.
@@ -184,20 +183,23 @@ def fetch(es_client, args):
     # TODO: validate match kwargs based on doctype
 
     # TODO: properly construct Search instance.
-    search = build_search(es_client, args)
+    search = build_search(es_client, index=args.index)
 
     # Assign the query mapping (bind doctype to match as needed.)
     if not args.doctype:
         # No doctype --> grab all records/documents.
+        logger.debug("No doctype")
         query_mapping = {}
     elif args.doctype not in DOCUMENT_TYPENAMES:
         # If doctype is given, it must be valid.
         raise ValueError("Unknown doctype: {}".format(args.doctype))
     else:
         # Doctype is given and is valid.
+        logger.debug("Doctype: %s", args.doctype)
         query_mapping = {DOCTYPE_KEY: args.doctype}
 
     # TODO: Properly filter result; are hits ordered by score?
     # TODO: empty query is logical here, but is it valid?
-    results = list(search.query("match", **query_mapping).execute())
+    logger.debug("query_mapping: %s", str(query_mapping))
+    results = search.query("match", **query_mapping)
     return finalize_results(results, num_records=args.num_docs)

@@ -8,7 +8,7 @@ __modified__ = "2016-11-10"
 __modname__ = "esprov.esprov.__init__"
 
 
-LOGGING_LEVEL = logging.INFO
+LOGGING_LEVEL = logging.DEBUG
 LOGGING_MESSAGE_FORMAT = \
     "[%(asctime)s] {%(module)s:%(funcName)s:%(lineno)d} %(levelname)s - " \
     "%(message)s"
@@ -16,6 +16,7 @@ LOGGING_MESSAGE_FORMAT = \
 
 def setup_logger():
     logger = logging.getLogger(__modname__.split(".")[-2])
+    logger.propagate = False
     logger.setLevel(LOGGING_LEVEL)
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(LOGGING_LEVEL)
