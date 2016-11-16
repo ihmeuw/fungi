@@ -25,28 +25,3 @@ def build_search(es_client, index="_all"):
     search = Search(using=es_client, index=index)
     logging.debug("Search: {}".format(search.to_dict()))
     return search
-
-
-
-def finalize_results(search, num_records, delimiter=None):
-    """
-    Limit the results from a search query to the requested number of records.
-
-    :param elasticsearch_dsl.search.Search search: ES search query
-    :param int num_records: number of records at which to cap results
-    :param str delimiter: delimiter on which to join resulting elements, if
-        text-ready result is what's desired (thus, optional)
-    :return list | str: same as input, but (perhaps) pared down; if delimiter
-        is given, result elements are joined on the delimiter for return
-    :raises AttributeError: if delimiter is given but has no 'join' method;
-        most obviously, this would occur if a non-string delimiter were given
-    """
-
-    if num_records and num_records < 0:
-        raise ValueError("Invalid maximum record count: {}".
-                         format(num_records))
-
-    results = search.execute()
-    filtered = results[:num_records] if num_records else results
-
-    return delimiter.join(filtered) if delimiter is not None else filtered

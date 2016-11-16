@@ -6,7 +6,7 @@ import logging
 from esprov import \
     CODE_STAGE_NAMESPACE_PREFIX, DOCTYPE_KEY, \
     DOCUMENT_TYPENAMES, ID_ATTRIBUTE_NAME, TIMESTAMP_KEY
-from esprov.utilities import build_search, finalize_results
+from esprov.utilities import build_search
 
 __author__ = "Vince Reuter"
 __modified__ = "2016-11-15"
@@ -92,7 +92,6 @@ def list_stages(es_client, args):
     query = search.query("match", **record_type_query_data)
     result = query.filter("range", **timespan_query_data)
 
-    logging.debug("result: %s", type(result))
     return result
 
 
