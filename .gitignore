@@ -1,3 +1,10 @@
 *.pyc
 .ipynb_checkpoints/
+*.log
+build/
+*.egg-info/
+.cache/
+dist/
+.idea/
+*.cmd
 
