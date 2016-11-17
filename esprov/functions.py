@@ -9,20 +9,19 @@ from esprov import \
 from esprov.utilities import build_search
 
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-15"
+__modified__ = "2016-11-16"
 __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
 __modname__ = "esprov.esprov.functions"
 
 
-LIST_STAGES_PARAMETERS = ("months", "weeks", "days", "hours", "minutes")
+LIST_STAGES_TIMESPANS = ("months", "weeks", "days", "hours", "minutes")
 ES_TIME_CHARACTERS = ('M', 'w', 'd', 'H', 'm')
-TIME_CHAR_BY_CLI_PARAM = dict(zip(LIST_STAGES_PARAMETERS,
-                                         ES_TIME_CHARACTERS))
+TIME_CHAR_BY_CLI_PARAM = dict(zip(LIST_STAGES_TIMESPANS, ES_TIME_CHARACTERS))
 
 
-__all__ = ["fetch", "list_stages", "LIST_STAGES_PARAMETERS"]
+__all__ = ["fetch", "list_stages", "LIST_STAGES_TIMESPANS"]
 
 
 # TODO: other use cases to handle and implement.
@@ -62,15 +61,18 @@ def list_stages(es_client, args):
     """
 
     """
-    if all([arg is None for arg in LIST_STAGES_PARAMETERS]):
+    if all([arg is None for arg in LIST_STAGES_TIMESPANS]):
         raise TypeError(
             "To use list_stages, at least one of {} must be specified "
-            "via the CLI.".format(", ".join(LIST_STAGES_PARAMETERS))
+            "via the CLI.".format(", ".join(LIST_STAGES_TIMESPANS))
         )
     """
 
+    # TODO: support arguments about what other data in addition to stage names should be available.
+    # TODO: also support specification of whether duplicate entries should be provided. (set/list uniquefaction)
+
     # Build up the time text filter.
-    if all([arg is None for arg in LIST_STAGES_PARAMETERS]):
+    if all([arg is None for arg in LIST_STAGES_TIMESPANS]):
         timespan_query_data = {}
     else:
         # Elasticsearch supports a time offset from current by
@@ -93,6 +95,17 @@ def list_stages(es_client, args):
     result = query.filter("range", **timespan_query_data)
 
     return result
+
+
+def index(es_client, args):
+    """
+    Create index for
+
+    :param elasticsearch.client.Elasticsearch es_client: connection with
+        which to create the new index.
+    :param argparse.Namespace args:
+    :return:
+    """
 
 
 

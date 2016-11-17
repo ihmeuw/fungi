@@ -63,22 +63,27 @@ class CLIFactory(object):
     # Subcommand-agnostic argument
     arguments = {
 
-        # Basic arguments shared and valid for each CLI function
+        # Basic arguments shared and valid for EVERY CLI function
         "index": Argument(
-            flags=("-i", "--index"),
-            help="Index to query",
-            default="_all"
+                flags=("-i", "--index"),
+                help="Index to query",
+                default="_all"
         ),
         "num_docs": Argument(
-            flags=("-n", "--num_docs"),
-            help="Limit for number of search hits",
-            type=int
+                flags=("-n", "--num_docs"),
+                help="Limit for number of search hits",
+                type=int
         ),
 
-        # "fetch" family of arguments
+        # Arguments shared but valid only for SOME CLI functions
         "doctype": Argument(
                 flags=("--doctype", ),
                 help="Document type to query"
+        ),
+        "duplicate": Argument(
+                flags=("--duplicate", ),
+                help="Retain duplicates in results",
+                action="store_true"
         ),
 
         # "list_stages" family of arguments
@@ -115,10 +120,12 @@ class CLIFactory(object):
     BASE_ARGS = ("index", "num_docs")
 
     subparsers = (
-        _Subparser(fetch,
-                   argument_names=(BASE_ARGS + ("doctype", ))),
-        _Subparser(list_stages,
-                   argument_names=(BASE_ARGS + LIST_STAGES_PARAMETERS))
+        _Subparser(
+                fetch, argument_names=(BASE_ARGS + ("doctype", ))),
+        _Subparser(
+                list_stages,
+                argument_names=(("duplicate", ) + BASE_ARGS + LIST_STAGES_TIMESPANS)
+        )
     )
 
 

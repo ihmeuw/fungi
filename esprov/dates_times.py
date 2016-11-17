@@ -1,10 +1,9 @@
 """ Parsing and writing dates and times. """
 
 import datetime
-import math
 
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-15"
+__modified__ = "2016-11-16"
 __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
@@ -19,16 +18,11 @@ class DT(object):
     # TODO: we could also perhaps truncate the millis and use "date_time_no_millis" or "strict_date_time_no_millis"
     # TODO: use the ES guide on date ranges: https://www.elastic.co/guide/en/elasticsearch/guide/current/_ranges.html#_ranges_on_dates
 
+    # ISO-formatted datetime string
+    FORMAT_STRING = "%Y-%m-%dT%H:%M:%S.%fZ"
 
+    # Member functions needed to provide a substitute interface.
     _REQUIRED_MEMBER_NAMES = ("parse", "write")
-    _DATE_TIME_DELIMITER = "T"
-
-    _ZONE_SUFFIX = "Z"
-
-    _PARTIAL_SECONDS_DELIMITER = "."
-    _DATE_DELIMITER = "-"
-    _TIME_DELIMITER = ":"
-
 
     @classmethod
     def parse(cls, dt_text):
@@ -41,22 +35,7 @@ class DT(object):
         :param str dt_text: datetime-encoding text
         :return datetime.datetime: datetime instance encoded by given text
         """
-
-        d, t = dt_text.strip().split(cls._DATE_TIME_DELIMITER)
-
-        year, month, day = map(int, d.split(cls._DATE_DELIMITER))
-
-        hour, minute, seconds = t.split(cls._TIME_DELIMITER)
-        hour, minute = int(hour), int(minute)
-
-        seconds = seconds[-len(cls._ZONE_SUFFIX)]
-        seconds, msecs = seconds.split(cls._PARTIAL_SECONDS_DELIMITER)
-        seconds = int(seconds)
-        microseconds = 1000 * msecs
-
-        dt = datetime.datetime(year, month, day, hour,
-                               minute, seconds, microseconds)
-        return dt
+        return datetime.datetime.strptime(dt_text, cls.FORMAT_STRING)
 
 
     @classmethod
@@ -67,7 +46,7 @@ class DT(object):
         :param datetime.datetime dt: datetime instance to write as text
         :return str: text representation of given datetime instance
         """
-        pass
+        return dt.isoformat()
 
 
     @classmethod

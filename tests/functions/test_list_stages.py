@@ -18,27 +18,42 @@ __modname__ = "esprov.tests.functions.test_list_stages"
 CLIENT = Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
 
 
-class TestListStages:
+ELASTICSEARCH_RECORD_LINES = """
+
+""".splitlines(True)
+
+
+class TestListStagesBasic:
     """ Tests for listing recent computational stages with ES records. """
 
 
     def test_no_filters(self):
+        """ When no filtering is specified, ALL stage names should be  """
         pass
 
 
     def test_single_period_lag(self):
+        """ The most basic time-lag comp. stages query is single-span. """
         pass
 
 
     def test_multi_period_lag(self):
+        """ Various lag spans can be chained together. """
+        pass
+
+
+    def test_multi_period_lag_span_collision(self):
+        """ Multiple values for the same lag time span can't be given. """
         pass
 
 
     def test_specific_index(self):
+        """ Specific index within which to search may be provided. """
         pass
 
 
     def test_limit_results(self):
+        """ Full results may be too verbose; they can be limited. """
         pass
 
 
@@ -68,3 +83,9 @@ class TestListStages:
 
     def test_limit_results_specific_index_multi_lag(self):
         pass
+
+
+
+class TestListStagesCustom:
+    """ Tests for nice-to-have sort of features for stage run query. """
+    pass

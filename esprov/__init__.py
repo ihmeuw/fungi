@@ -59,7 +59,6 @@ DOCUMENT_FIELDNAMES = {
     DOCTYPE_KEY, MESSAGE_KEY, TIMESTAMP_KEY,
     VERSION_KEY, DOCUMENT_KEY, INSTANCE_KEY,
     HOST_KEY, HOSTNAME_KEY, PORT_KEY, FIELDS_KEY
-
 }
 
 # TODO: An analogous point about configurability, security, and mapping
