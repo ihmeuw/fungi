@@ -24,14 +24,6 @@ ES_CLIENT = Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
 LOGGER = logging.getLogger(__modname__)
 
 
-@pytest.fixture(scope="session")
-def clear_test_indices():
-    """ Clear test indices once, at the start of test run session. """
-    # DEBUG
-    print("Clearing test indices to start testing session...")
-    remove_test_indices(TEST_INDEX_SEARCH_STRING)
-
-
 
 def assert_no_test_indices(client=ES_CLIENT):
     """
@@ -40,12 +32,7 @@ def assert_no_test_indices(client=ES_CLIENT):
     :param elasticsearch.client.Elasticsearch client: ES client
     :raises AssertionError: if client has least one test-prefix-named index
     """
-    # DEBUG
-    try:
-        assert 0 == count_prefixed_indices(client)
-    except AssertionError as e:
-        print "BEGINNING INDEX NAMES: {}".format(get_prefixed_indices(client))
-        raise e
+    assert 0 == count_prefixed_indices(client)
 
 
 
@@ -81,12 +68,10 @@ def remove_test_indices(index_names_wildcard_expression):
     :param str index_names_wildcard_expression: wildcard-containing
         expression to use in order to match index names for removal
     """
-    # DEBUG
-    url = "http://{h}:{p}/{indices_wildcard}?pretty&pretty".format(
+    es_url = "http://{h}:{p}/{indices_wildcard}?pretty&pretty".format(
         h=HOST, p=PORT, indices_wildcard=index_names_wildcard_expression
     )
-    print "URL: {}".format(url)
-    command_elements = _subprocessify("curl -XDELETE {}".format(url))
+    command_elements = _subprocessify("curl -XDELETE {}".format(es_url))
     subprocess.check_call(command_elements)
 
 
@@ -116,8 +101,7 @@ def valid_index_count(client, expected_match_count, prefix=TEST_INDEX_PREFIX):
         expected and observed count
     """
     prefix = _trim_prefix(prefix)
-    observed_match_count = count_prefixed_indices(client, prefix)
-    return expected_match_count == observed_match_count
+    return expected_match_count == count_prefixed_indices(client, prefix)
 
 
 

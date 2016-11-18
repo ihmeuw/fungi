@@ -54,13 +54,7 @@ class TestIndexCreation:
     def test_create_single_index(self, es_client):
         """ Most basic index creation case is single index. """
         self.build_index()
-
-        # DEBUG
-        try:
-            assert 1 == count_prefixed_indices(es_client)
-        except AssertionError as e:
-            print "INDEX NAMES: {}".format(es_client.indices.get_alias().keys())
-            raise e
+        assert 1 == count_prefixed_indices(es_client)
 
 
     @pytest.mark.skip()
