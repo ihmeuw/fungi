@@ -1,5 +1,7 @@
 """ General test configuration/setup/constants. """
 
+import subprocess
+
 from elasticsearch import Elasticsearch
 import pytest
 
@@ -57,16 +59,27 @@ def es_client(request):
     def clear():
         """ Upon test conclusion, clear all indices named by
         esprov test convention; assert none are lingering. """
-        # Perform the deletion.
-        request.client.indices.delete(index=TEST_INDEX_SEARCH_STRING,
-                                      ignore=[400, 404])
-        # Check that no test indices remain.
+        remove_test_indices()
         assert_no_test_indices()
 
     # Provide requesting test function with teardown.
     request.addfinalizer(clear)
 
     return ES_CLIENT
+
+
+
+def remove_test_indices(test_index_name_prefix=TEST_INDEX_PREFIX):
+    """
+    Clear client's test indices (names prefixed)
+
+    :param elasticsearch.client.Elasticsearch client: ES connection in
+        which to remove indices with given prefix
+    :param str test_index_name_prefix: prefix with which index
+        name must begin in order for it to be removed
+    """
+    url = "{h}:{p}/{i}".format(h=HOST, p=PORT, i=test_index_name_prefix)
+    subprocess.call(_subprocessify("curl -XDELETE {}".format(url)))
 
 
 
@@ -102,7 +115,8 @@ def valid_index_count(client, expected_match_count, prefix=TEST_INDEX_PREFIX):
 
 def valid_index_names(client, expected_index_names, prefix=TEST_INDEX_PREFIX):
     """
-
+    Determine client's knowledge of ES indices matches expectation with
+    respect to names prefixed as specified.
 
     :param elasticsearch.client.Elasticsearch client: ES client
         on which to validate index names
@@ -137,6 +151,9 @@ def count_prefixed_indices(client, prefix=TEST_INDEX_PREFIX):
     return sum(1 for index_name in client.indices.get_alias().keys()
                if index_name.startswith(prefix))
 
+
+def _subprocessify(command_text):
+    return command_text.split(" ")
 
 
 def _trim_prefix(prefix):

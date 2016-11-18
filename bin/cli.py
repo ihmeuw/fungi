@@ -3,7 +3,8 @@
 import argparse
 from collections import namedtuple
 
-from esprov.functions import *
+from esprov.functions import fetch, list_stages, index, LIST_STAGES_TIMESPANS
+
 
 __author__ = "Vince Reuter"
 __modified__ = "2016-11-10"
@@ -64,6 +65,7 @@ class CLIFactory(object):
     arguments = {
 
         # Basic arguments shared and valid for EVERY CLI function
+        # TODO: determine if this will work given index() function.
         "index": Argument(
                 flags=("-i", "--index"),
                 help="Index to query",
@@ -114,6 +116,18 @@ class CLIFactory(object):
                 type=int
         ),
 
+        "index_operation": Argument(
+                # When it's used, index_operation is required.
+                flags=("index_operation", ),
+                help="Name of Elasticsearch Index operation to perform",
+                choices=["insert", "remove", "exists"]
+        ),
+        "index_target": Argument(
+                # Generally, index name is optional. This version is required.
+                flags=("index_target", ),
+                help="Name of Elasticsearch Index for Index operation"
+        )
+
     }
 
     # Shared and valid for all CLI functions.
@@ -121,10 +135,18 @@ class CLIFactory(object):
 
     subparsers = (
         _Subparser(
-                fetch, argument_names=(BASE_ARGS + ("doctype", ))),
+                fetch,
+                argument_names=(BASE_ARGS + ("doctype", ))
+        ),
         _Subparser(
                 list_stages,
-                argument_names=(("duplicate", ) + BASE_ARGS + LIST_STAGES_TIMESPANS)
+                argument_names=(("duplicate", ) +
+                                BASE_ARGS +
+                                LIST_STAGES_TIMESPANS)
+        ),
+        _Subparser(
+                index,
+                argument_names=("index_operation", "index_target"),
         )
     )
 
@@ -155,7 +177,8 @@ class CLIFactory(object):
                 # Parse and bundle current argument's argparse K-V pairs.
                 kwargs = {
                     field: getattr(argument, field)
-                    for field in argument._fields if field != 'flags'
+                    for field in argument._fields
+                    if field != 'flags' and getattr(argument, field)
                 }
 
                 # Add the argument, providing reference

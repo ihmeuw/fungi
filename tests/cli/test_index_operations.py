@@ -8,12 +8,12 @@ for our CLI and also serve as a basic validation of our communication with ES.
  """
 
 import os
-import subprocess
 
 import pytest
 
 import bin
-from tests.conftest import count_prefixed_indices, make_index_name
+from bin import cli
+from tests.conftest import count_prefixed_indices, make_index_name, ES_CLIENT
 
 
 __author__ = "Vince Reuter"
@@ -33,15 +33,22 @@ class TestIndexCreation:
 
 
     @staticmethod
-    def build_index(name=DEFAULT_TEST_INDEX_NAME):
+    def build_index(
+                client=ES_CLIENT,
+                name=DEFAULT_TEST_INDEX_NAME,
+                parser=cli.CLIFactory.get_parser()
+    ):
         """
-        Build Elasticsearch index with given name
+        Build Elasticsearch index with name for client.
 
-        :param str name: raw name for index
-            (will be prefixed with test-indicative text)
+        :param client: Elasticsearch client, optional
+        :param str name: raw name for index;
+            this will be prefixed with test-indicative text, optional
+        :param argparse.ArgumentParser parser: command-line
+            argument parser, optional
         """
-        cmd = [ESPROV_PATH, "index", "create", make_index_name(name)]
-        subprocess.call(cmd)
+        args = parser.parse_args(["index", "insert", name])
+        cli.index(client, args)
 
 
     def test_create_single_index(self, es_client):

@@ -11,8 +11,7 @@ https://stash.ihme.washington.edu/users/adolgert/repos/provda/browse.
 from elasticsearch_dsl import \
     Date, DocType, Integer, \
     Keyword, Mapping, Object, \
-    Text, MetaField, Meta, \
-    Short, String
+    Text, MetaField, Short
 
 __author__ = "Vince Reuter"
 __modified__ = "2016-11-16"
@@ -49,6 +48,7 @@ MAPPING.field("@fields", "object", enabled=False)
 class ProvdaRecord(DocType):
     """ Representation of a single provda-created provenance record. """
 
+
     @classmethod
     def init(cls, index, using):
         """
@@ -60,6 +60,7 @@ class ProvdaRecord(DocType):
             alias for one to use
         """
         super(ProvdaRecord, cls).init(index=index, using=using)
+
 
     class Meta:
         """ Flexibility and metadata handling for records. """

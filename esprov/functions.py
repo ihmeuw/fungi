@@ -6,6 +6,7 @@ import logging
 from esprov import \
     CODE_STAGE_NAMESPACE_PREFIX, DOCTYPE_KEY, \
     DOCUMENT_TYPENAMES, ID_ATTRIBUTE_NAME, TIMESTAMP_KEY
+from esprov.provda_record import ProvdaRecord
 from esprov.utilities import build_search
 
 __author__ = "Vince Reuter"
@@ -20,8 +21,7 @@ LIST_STAGES_TIMESPANS = ("months", "weeks", "days", "hours", "minutes")
 ES_TIME_CHARACTERS = ('M', 'w', 'd', 'H', 'm')
 TIME_CHAR_BY_CLI_PARAM = dict(zip(LIST_STAGES_TIMESPANS, ES_TIME_CHARACTERS))
 
-
-__all__ = ["fetch", "list_stages", "LIST_STAGES_TIMESPANS"]
+LOGGER = logging.getLogger(__modname__)
 
 
 # TODO: other use cases to handle and implement.
@@ -89,84 +89,43 @@ def list_stages(es_client, args):
     # Match on code document instances.
     record_type_query_data = {ID_ATTRIBUTE_NAME: CODE_STAGE_NAMESPACE_PREFIX}
 
-    search = build_search(es_client, index=args.index)
-
+    search = build_search(es_client, args=args)
     query = search.query("match", **record_type_query_data)
     result = query.filter("range", **timespan_query_data)
 
     return result
 
 
+
 def index(es_client, args):
     """
-    Create index for
+    Perform Elasticsearch Index-related
+    operation indicated by subcommand's arguments.
 
     :param elasticsearch.client.Elasticsearch es_client: connection with
         which to create the new index.
-    :param argparse.Namespace args:
-    :return:
+    :param argparse.Namespace args: binding between parameter name
+        and argument value for command-line options
+    :return NoneType | bool: null for insert/remove; for existence check,
+        a flag indicating whether client knows about an index with
+        the specified name
+    :raises ValueError: if namespace's index_operation is unknown
     """
 
+    LOGGER.debug("Executing index operation...")
+    operation_name = args.index_operation
+    LOGGER.debug("Operation name is %s", str(operation_name))
 
-
-def list_stages_between(es_client, args, datetime_parser, datetime_writer):
-    """
-
-
-    :param es_client:
-    :param args:
-    :param datetime_parser:
-    :param datetime_writer:
-    :return:
-    """
-    pass
-
-
-def list_stages_within(es_client, args, datetime_parser, datetime_writer):
-    pass
-
-
-
-def list_stages_since(es_client, args, datetime_parser, datetime_writer):
-    """
-    Determine the stages that have run within past given time.
-
-    :param elasticsearch.client.Elasticsearch es_client: Elasticsearch client
-        with which to execute the search query
-    :param argparse.Namespace args: binding between parameter name and
-        argument value
-    :param function(str) -> datetime.datetime datetime_parser: function with
-        which to parse text representation of datetime and produce datetime
-    :param function(str) -> datetime.datetime datetime_writer: function with
-        which to write text representation of datetime
-    :return collections.abc.Iterable(str):
-    """
-    # TODO: finish docstring.
-    # TODO: start with assumption of days, then can add flexibility via optional arguments or other subfunctions.
-    # TODO: the return should be the user script and affected directories or something thereabouts.
-    # There are relatively well-defined steps here.
-    # Parse user input (determine/restrict datetime format.
-    # CLI may allow its own sort of time format.
-    # CLI should definitely support the native provda time format, though.
-    # The native provda time format accords with RFC3339?
-    # Perform any necessary translation between user input time and provda.
-    # Form query for elasticsearch.
-    # Send/execute query.
-    # Parse and format result(s).
-
-    # TODO: for the datetime range, ES provides support:
-    # https://www.elastic.co/guide/en/elasticsearch/guide/current/_ranges.html.
-    # The datetime format in the provda logs is: 2016-11-06T11:04:25.268Z
-    # TODO: potential design upgrade: plugin functions
-    # With plugins, custom datetime specification strategy could be used.
-    pass
-
-
-
-def list_modifiers(es_client, args):
-    """ Determine the most recent process(es)/agent(s) to modify file/DB (entity). """
-    # TODO: want user and process, could do each individually/with required discrete argument, or with separate subfunctions.
-    pass
+    if operation_name == "insert":
+        LOGGER.debug("Inserting index %s", str(args.index_target))
+        ProvdaRecord.init(index=args.index_target, using=es_client)
+    elif operation_name == "remove":
+        pass
+    elif operation_name == "exists":
+        pass
+    else:
+        raise ValueError("Unexpected index operation: {} ({})".
+                         format(operation_name, type(operation_name)))
 
 
 
@@ -196,7 +155,8 @@ def fetch(es_client, args):
     # TODO: validate match kwargs based on doctype
 
     # TODO: properly construct Search instance.
-    search = build_search(es_client, index=args.index)
+
+    search = build_search(es_client, args=args)
 
     # Assign the query mapping (bind doctype to match as needed.)
     if not args.doctype:
@@ -219,3 +179,38 @@ def fetch(es_client, args):
     result = search.query("match", **query_mapping)
 
     return result
+
+
+
+def list_stages_TODO_stub(es_client, args, datetime_parser, datetime_writer):
+    """
+    Determine the stages that have run within past given time.
+
+    :param elasticsearch.client.Elasticsearch es_client: Elasticsearch client
+        with which to execute the search query
+    :param argparse.Namespace args: binding between parameter name and
+        argument value
+    :param function(str) -> datetime.datetime datetime_parser: function with
+        which to parse text representation of datetime and produce datetime
+    :param function(str) -> datetime.datetime datetime_writer: function with
+        which to write text representation of datetime
+    :return collections.abc.Iterable(str):
+    """
+    # TODO: start with assumption of days, then can add flexibility via optional arguments or other subfunctions.
+    # TODO: the return should be the user script and affected directories or something thereabouts.
+    # There are relatively well-defined steps here.
+    # Parse user input (determine/restrict datetime format.
+    # CLI may allow its own sort of time format.
+    # CLI should definitely support the native provda time format, though.
+    # The native provda time format accords with RFC3339?
+    # Perform any necessary translation between user input time and provda.
+    # Form query for elasticsearch.
+    # Send/execute query.
+    # Parse and format result(s).
+
+    # TODO: for the datetime range, ES provides support:
+    # https://www.elastic.co/guide/en/elasticsearch/guide/current/_ranges.html.
+    # The datetime format in the provda logs is: 2016-11-06T11:04:25.268Z
+    # TODO: potential design upgrade: plugin functions
+    # With plugins, custom datetime specification strategy could be used.
+    pass
