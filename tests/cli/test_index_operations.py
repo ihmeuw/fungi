@@ -38,7 +38,7 @@ def call_cli_func(command, client=ES_CLIENT):
     :param elasticsearch.client.Elasticsearch client: client to use for ES call
     """
     args = cli.CLIFactory.get_parser().parse_args(command.split(" "))
-    getattr(cli, args.func)(client, args)
+    args.func(client, args)
 
 
 class TestIndexCreation:
@@ -116,12 +116,13 @@ class TestRemoveIndex:
         cli.index(client, args)
 
 
+    @pytest.mark.skip()
     def test_remove_nonexistent(self, es_client):
         """ Attempt to remove nonexistent index is fine, no effect. """
         nonexistent = Index("do_not_build")
 
 
-
+    @pytest.mark.skip()
     def test_remove_extant(self, es_client, inserted_index_and_response):
         """ Test removal of index known to ES client. """
         # Insert index and validate insertion.
