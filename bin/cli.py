@@ -176,6 +176,11 @@ class CLIFactory(object):
 
                 # Parse and bundle current argument's argparse K-V pairs.
                 kwargs = {
+                    # 'flags' just stores the ways in which the option
+                    # may be specified via CLI; we want non-null argparse
+                    # K-V pairs only, as mixing certain combinations of
+                    # K-V pairs seems to be invalid (e.g., action="store_true"
+                    # with type=<anything>, even with <anything>=None.)
                     field: getattr(argument, field)
                     for field in argument._fields
                     if field != 'flags' and getattr(argument, field)
