@@ -1,5 +1,6 @@
 """ General test configuration/setup/constants. """
 
+import json
 import logging
 import subprocess
 
@@ -18,8 +19,10 @@ __modname__ = "esprov.tests.conftest"
 
 TEST_INDEX_PREFIX = "esprov-test"
 TEST_INDEX_SEARCH_STRING = "{}*".format(TEST_INDEX_PREFIX)
+DEFAULT_TEST_INDEX_NAME = "{}-simpletest".format(TEST_INDEX_PREFIX)
 
 ES_CLIENT = Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
+ES_URL_BASE = "http://{h}:{p}".format(h=HOST, p=PORT)
 
 LOGGER = logging.getLogger(__modname__)
 
@@ -61,6 +64,22 @@ def es_client(request):
 
 
 
+@pytest.fixture(scope="function")
+def inserted_index_and_response():
+    """
+    Insert a default test index into the default ES client.
+
+    :return str, dict: inserted Index name and mapping obtained
+        from parsing response as JSON
+    """
+    index_name = DEFAULT_TEST_INDEX_NAME
+    command = "curl -XPUT {es}/".format(es=ES_URL_BASE)
+    proc = subprocess.Popen(_subprocessify(command), stdout=subprocess.PIPE)
+    response = proc.stdout.read()
+    return index_name, json.loads(response)
+
+
+
 def remove_test_indices(index_names_wildcard_expression):
     """
     Clear client's test indices (names prefixed)
@@ -68,8 +87,8 @@ def remove_test_indices(index_names_wildcard_expression):
     :param str index_names_wildcard_expression: wildcard-containing
         expression to use in order to match index names for removal
     """
-    es_url = "http://{h}:{p}/{indices_wildcard}?pretty&pretty".format(
-        h=HOST, p=PORT, indices_wildcard=index_names_wildcard_expression
+    es_url = "{es}/{indices_wildcard}?pretty&pretty".format(
+        es=ES_URL_BASE, indices_wildcard=index_names_wildcard_expression
     )
     command_elements = _subprocessify("curl -XDELETE {}".format(es_url))
     subprocess.check_call(command_elements)

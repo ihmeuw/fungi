@@ -9,11 +9,14 @@ for our CLI and also serve as a basic validation of our communication with ES.
 
 import os
 
+from elasticsearch_dsl import Index
+import pytest
+
 import bin
 from bin import cli
 from tests.conftest import \
     count_prefixed_indices, get_prefixed_indices, \
-    make_index_name, ES_CLIENT, TEST_INDEX_PREFIX
+    make_index_name, DEFAULT_TEST_INDEX_NAME, ES_CLIENT, TEST_INDEX_PREFIX
 
 
 __author__ = "Vince Reuter"
@@ -25,8 +28,17 @@ __modname__ = "esprov.tests.test_index_operations"
 
 
 ESPROV_PATH = os.path.join(os.path.dirname(bin.__file__), "esprov")
-DEFAULT_TEST_INDEX_NAME = "{}-simpletest".format(TEST_INDEX_PREFIX)
 
+
+def call_cli_func(command, client=ES_CLIENT):
+    """
+
+
+    :param str command: text as would be entered at a command prompt
+    :param elasticsearch.client.Elasticsearch client: client to use for ES call
+    """
+    args = cli.CLIFactory.get_parser().parse_args(command.split(" "))
+    getattr(cli, args.func)(client, args)
 
 
 class TestIndexCreation:
@@ -60,8 +72,7 @@ class TestIndexCreation:
             )
 
         # Parse arguments for Index construction and execute.
-        args = parser.parse_args(["index", "insert", name])
-        cli.index(client, args)
+        call_cli_func("index insert {}".format(name))
 
 
     def test_create_single_index(self, es_client):
@@ -87,9 +98,35 @@ class TestIndexCreation:
 
 
 
-class TestDeleteIndex:
+class TestRemoveIndex:
     """ Tests for deletion of an Elasticsearch Index. """
-    pass
+
+
+    @staticmethod
+    def attempt_removal(name, client, parser=cli.CLIFactory.get_parser()):
+        """
+        Attempt removal of ES Index of given name with given client.
+
+        :param str name: name of ES Index for which to attempt removal
+        :param elasticsearch.client.Elasticsearch client: ES client
+            with/on which to attempt removal of Index with given name
+        :param argparse.ArgumentParser parser: command-line argument parser
+        """
+        args = parser.parse_args()
+        cli.index(client, args)
+
+
+    def test_remove_nonexistent(self, es_client):
+        """ Attempt to remove nonexistent index is fine, no effect. """
+        nonexistent = Index("do_not_build")
+
+
+
+    def test_remove_extant(self, es_client, inserted_index_and_response):
+        """ Test removal of index known to ES client. """
+        # Insert index and validate insertion.
+        index, response = inserted_index_and_response
+        assert index in response
 
 
 

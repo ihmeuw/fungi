@@ -120,9 +120,10 @@ def index(es_client, args):
         LOGGER.debug("Inserting index %s", str(args.index_target))
         ProvdaRecord.init(index=args.index_target, using=es_client)
     elif operation_name == "remove":
-        pass
+        LOGGER.debug("Removing index %s", str(args.index_target))
+
     elif operation_name == "exists":
-        pass
+        LOGGER.debug("Checking existence of index %s", str(args.target_index))
     else:
         raise ValueError("Unexpected index operation: {} ({})".
                          format(operation_name, type(operation_name)))
