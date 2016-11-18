@@ -47,14 +47,20 @@ class TestIndexCreation:
         :param argparse.ArgumentParser parser: command-line
             argument parser, optional
         """
-        args = parser.parse_args(["index", "insert", name])
+        args = parser.parse_args(["index", "insert", make_index_name(name)])
         cli.index(client, args)
 
 
     def test_create_single_index(self, es_client):
         """ Most basic index creation case is single index. """
         self.build_index()
-        assert 1 == count_prefixed_indices(es_client)
+
+        # DEBUG
+        try:
+            assert 1 == count_prefixed_indices(es_client)
+        except AssertionError as e:
+            print "INDEX NAMES: {}".format(es_client.indices.get_alias().keys())
+            raise e
 
 
     @pytest.mark.skip()

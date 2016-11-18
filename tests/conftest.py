@@ -1,5 +1,6 @@
 """ General test configuration/setup/constants. """
 
+import logging
 import subprocess
 
 from elasticsearch import Elasticsearch
@@ -20,16 +21,15 @@ TEST_INDEX_SEARCH_STRING = "{}*".format(TEST_INDEX_PREFIX)
 
 ES_CLIENT = Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
 
+LOGGER = logging.getLogger(__modname__)
 
 
-def count_test_index_names(client=ES_CLIENT):
-    """
-    Count the number of esprov test prefix-named indices.
-
-    :param elasticsearch.client.Elasticsearch client: ES client
-    :return int: number of client's indices named with esprov prefix.
-    """
-    return len(client.indices.get_alias(index=TEST_INDEX_SEARCH_STRING))
+@pytest.fixture(scope="session")
+def clear_test_indices():
+    """ Clear test indices once, at the start of test run session. """
+    # DEBUG
+    print("Clearing test indices to start testing session...")
+    remove_test_indices(TEST_INDEX_SEARCH_STRING)
 
 
 
@@ -40,7 +40,12 @@ def assert_no_test_indices(client=ES_CLIENT):
     :param elasticsearch.client.Elasticsearch client: ES client
     :raises AssertionError: if client has least one test-prefix-named index
     """
-    assert 0 == count_test_index_names(client)
+    # DEBUG
+    try:
+        assert 0 == count_prefixed_indices(client)
+    except AssertionError as e:
+        print "BEGINNING INDEX NAMES: {}".format(get_prefixed_indices(client))
+        raise e
 
 
 
@@ -59,7 +64,7 @@ def es_client(request):
     def clear():
         """ Upon test conclusion, clear all indices named by
         esprov test convention; assert none are lingering. """
-        remove_test_indices()
+        remove_test_indices(TEST_INDEX_SEARCH_STRING)
         assert_no_test_indices()
 
     # Provide requesting test function with teardown.
@@ -69,17 +74,20 @@ def es_client(request):
 
 
 
-def remove_test_indices(test_index_name_prefix=TEST_INDEX_PREFIX):
+def remove_test_indices(index_names_wildcard_expression):
     """
     Clear client's test indices (names prefixed)
 
-    :param elasticsearch.client.Elasticsearch client: ES connection in
-        which to remove indices with given prefix
-    :param str test_index_name_prefix: prefix with which index
-        name must begin in order for it to be removed
+    :param str index_names_wildcard_expression: wildcard-containing
+        expression to use in order to match index names for removal
     """
-    url = "{h}:{p}/{i}".format(h=HOST, p=PORT, i=test_index_name_prefix)
-    subprocess.call(_subprocessify("curl -XDELETE {}".format(url)))
+    # DEBUG
+    url = "http://{h}:{p}/{indices_wildcard}?pretty&pretty".format(
+        h=HOST, p=PORT, indices_wildcard=index_names_wildcard_expression
+    )
+    print "URL: {}".format(url)
+    command_elements = _subprocessify("curl -XDELETE {}".format(url))
+    subprocess.check_call(command_elements)
 
 
 
@@ -138,6 +146,22 @@ def valid_index_names(client, expected_index_names, prefix=TEST_INDEX_PREFIX):
 
 
 
+def get_prefixed_indices(client, prefix=TEST_INDEX_PREFIX):
+    """
+    Get index names with given prefix that are known to client.
+
+    :param elasticsearch.client.Elasticsearch client: Elasticsearch client
+        from which to get matching index names
+    :param str prefix: prefix on which to match index names;
+        optional, if omitted module-scope constant will be used
+    :return set[str]: collection of index names with
+        given prefix that are known to client
+    """
+    return {index_name for index_name in client.indices.get_alias().keys()
+            if index_name.startswith(prefix)}
+
+
+
 def count_prefixed_indices(client, prefix=TEST_INDEX_PREFIX):
     """
     Count the number of indices with prefix of which client is aware.
@@ -148,8 +172,7 @@ def count_prefixed_indices(client, prefix=TEST_INDEX_PREFIX):
         optional, if omitted module-scope constant will be used
     :return int: number of indices with prefix of which client is aware
     """
-    return sum(1 for index_name in client.indices.get_alias().keys()
-               if index_name.startswith(prefix))
+    return len(get_prefixed_indices(client, prefix))
 
 
 def _subprocessify(command_text):
