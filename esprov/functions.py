@@ -17,9 +17,17 @@ __email__ = "vr24@uw.edu"
 __modname__ = "esprov.esprov.functions"
 
 
+# Related to list_stages
 LIST_STAGES_TIMESPANS = ("months", "weeks", "days", "hours", "minutes")
 ES_TIME_CHARACTERS = ('M', 'w', 'd', 'H', 'm')
 TIME_CHAR_BY_CLI_PARAM = dict(zip(LIST_STAGES_TIMESPANS, ES_TIME_CHARACTERS))
+
+# Related to Index operations
+INDEX_CREATION_NAMES = {"insert", "create", "build"}
+INDEX_DELETION_NAMES = {"remove", "delete"}
+INDEX_EXISTENCE_NAMES = {"exists"}
+INDEX_OPERATION_NAMES = \
+    INDEX_EXISTENCE_NAMES | INDEX_CREATION_NAMES | INDEX_DELETION_NAMES
 
 LOGGER = logging.getLogger(__modname__)
 
@@ -116,13 +124,15 @@ def index(es_client, args):
     operation_name = args.index_operation
     LOGGER.debug("Operation name is %s", str(operation_name))
 
-    if operation_name == "insert":
+    if operation_name in INDEX_CREATION_NAMES:
         LOGGER.debug("Inserting index %s", str(args.index_target))
         ProvdaRecord.init(index=args.index_target, using=es_client)
-    elif operation_name == "remove":
+    elif operation_name in INDEX_DELETION_NAMES:
         LOGGER.debug("Removing index %s", str(args.index_target))
-
-    elif operation_name == "exists":
+        # Ignore elasticsearch.exceptions.RequestError (400);
+        # also ignore elasticsearch.exceptions.NotFoundError (404).
+        es_client.indices.delete(index=args.index_target, ignore=[400, 404])
+    elif operation_name in INDEX_EXISTENCE_NAMES:
         LOGGER.debug("Checking existence of index %s", str(args.target_index))
     else:
         raise ValueError("Unexpected index operation: {} ({})".

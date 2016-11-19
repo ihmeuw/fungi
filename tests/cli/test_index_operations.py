@@ -7,13 +7,15 @@ for our CLI and also serve as a basic validation of our communication with ES.
 
  """
 
+from argparse import ArgumentError
 import os
 
-from elasticsearch_dsl import Index
 import pytest
 
 import bin
 from bin import cli
+from esprov.functions import \
+    INDEX_CREATION_NAMES, INDEX_DELETION_NAMES, INDEX_EXISTENCE_NAMES
 from tests.conftest import \
     count_prefixed_indices, get_prefixed_indices, \
     make_index_name, DEFAULT_TEST_INDEX_NAME, ES_CLIENT, TEST_INDEX_PREFIX
@@ -32,7 +34,7 @@ ESPROV_PATH = os.path.join(os.path.dirname(bin.__file__), "esprov")
 
 def call_cli_func(command, client=ES_CLIENT):
     """
-
+    Call a CLI function based on given command and with given ES client.
 
     :param str command: text as would be entered at a command prompt
     :param elasticsearch.client.Elasticsearch client: client to use for ES call
@@ -41,24 +43,60 @@ def call_cli_func(command, client=ES_CLIENT):
     args.func(client, args)
 
 
+
+@pytest.fixture(scope="function", params=["unsupported"])
+def unsupported_index_operation_name(request):
+    """
+    Create and return unsupported Index operation name (undefined in CLI)
+
+    :param pytest._pytest.fixtures.FixtureRequest request: test case
+        function requesting parameterization
+    :return str: unsupported Index operation name
+    """
+    return request.param
+
+
+
+@pytest.mark.skip
+class TestUnsupported:
+    """ Tests for unsupported operations. """
+
+
+    def test_unsupported_index_operation_subcommand(
+            self, inserted_index_and_response, unsupported_index_operation_name
+    ):
+        """ Attempt to use unsupported subcommand is erroneous/exceptional. """
+
+        # Insert dummy test Index into default ES client and assert existence.
+        index, response = inserted_index_and_response
+        assert index in response
+
+        command = "index {} {}".format(unsupported_index_operation_name, index)
+        with pytest.raises(ArgumentError):
+            call_cli_func(command)
+
+
+
 class TestIndexCreation:
     """ Tests for creation of an Elasticsearch Index. """
 
 
+    @pytest.fixture(scope="function", params=list(INDEX_CREATION_NAMES))
+    def client_and_opname(self, request, es_client):
+        """ Provide full space of Index creation aliases. """
+        return es_client, request.param
+
+
     @staticmethod
-    def build_index(
-                name=DEFAULT_TEST_INDEX_NAME,
-                client=ES_CLIENT,
-                parser=cli.CLIFactory.get_parser()
-    ):
+    def build_index(operation, name=DEFAULT_TEST_INDEX_NAME, client=ES_CLIENT):
         """
         Build Elasticsearch index with name for client.
 
+        :param str operation: specific name for operation for Index creation
         :param str name: name for ES Index to build;
             this should begin with designated prefix for test index names
-        :param client: Elasticsearch client, optional
-        :param argparse.ArgumentParser parser: command-line
-            argument parser, optional
+        :param elasticsearch.client.Elasticsearch client: ES client
+            to use for Index construction
         :raises ValueError: if name for test index to construct
             does not begin with the designated test index name prefix
         """
@@ -72,62 +110,66 @@ class TestIndexCreation:
             )
 
         # Parse arguments for Index construction and execute.
-        call_cli_func("index insert {}".format(name))
+        call_cli_func("index {op} {index}".format(op=operation, index=name),
+                      client=client)
 
 
-    def test_create_single_index(self, es_client):
+    def test_create_single_index(self, client_and_opname):
         """ Most basic index creation case is single index. """
-        self.build_index()
-        assert 1 == count_prefixed_indices(es_client)
+        client, opname = client_and_opname
+        self.build_index(operation=opname)
+        assert 1 == count_prefixed_indices(client)
 
 
-    def test_create_multiple_indices(self, es_client):
+    def test_create_multiple_indices(self, client_and_opname):
         """ Multiple indices may be created for the same client. """
 
+        client, opname = client_and_opname
+
         first_index_name = make_index_name("first_index")
-        self.build_index(first_index_name, client=es_client)
+        self.build_index(operation=opname,
+                         name=first_index_name,
+                         client=client)
         expected_index_names = {first_index_name}
-        observed_index_names = get_prefixed_indices(client=es_client)
+        observed_index_names = get_prefixed_indices(client=client)
         assert expected_index_names == observed_index_names
 
         second_index_name = make_index_name("second_index")
-        self.build_index(second_index_name, client=es_client)
+        self.build_index(operation=opname,
+                         name=second_index_name,
+                         client=client)
         expected_index_names = {first_index_name, second_index_name}
-        observed_index_names = get_prefixed_indices(client=es_client)
+        observed_index_names = get_prefixed_indices(client=client)
         assert expected_index_names == observed_index_names
 
 
 
-class TestRemoveIndex:
+@pytest.mark.skip
+class TestIndexDeletion:
     """ Tests for deletion of an Elasticsearch Index. """
 
 
-    @staticmethod
-    def attempt_removal(name, client, parser=cli.CLIFactory.get_parser()):
-        """
-        Attempt removal of ES Index of given name with given client.
-
-        :param str name: name of ES Index for which to attempt removal
-        :param elasticsearch.client.Elasticsearch client: ES client
-            with/on which to attempt removal of Index with given name
-        :param argparse.ArgumentParser parser: command-line argument parser
-        """
-        args = parser.parse_args()
-        cli.index(client, args)
+    @pytest.fixture(scope="function", params=list(INDEX_DELETION_NAMES))
+    def opname(self, request):
+        """ Provide full space of Index deletion aliases. """
+        return request.param
 
 
-    @pytest.mark.skip()
-    def test_remove_nonexistent(self, es_client):
+    def test_remove_nonexistent(self, es_client, opname):
         """ Attempt to remove nonexistent index is fine, no effect. """
-        nonexistent = Index("do_not_build")
+        call_cli_func("index {} do_not_build".format(opname), client=es_client)
 
 
-    @pytest.mark.skip()
-    def test_remove_extant(self, es_client, inserted_index_and_response):
+    def test_remove_extant(self, es_client, opname,
+                           inserted_index_and_response):
         """ Test removal of index known to ES client. """
+
         # Insert index and validate insertion.
         index, response = inserted_index_and_response
-        assert index in response
+        assert index in es_client.indices.get_alias().keys()
+
+        call_cli_func("index {} {}".format(opname, index), client=es_client)
+        assert index not in es_client.indices.get_alias().keys()
 
 
 

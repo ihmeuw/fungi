@@ -3,7 +3,10 @@
 import argparse
 from collections import namedtuple
 
-from esprov.functions import fetch, list_stages, index, LIST_STAGES_TIMESPANS
+from esprov.functions import \
+    fetch, list_stages, index, \
+    INDEX_CREATION_NAMES, INDEX_DELETION_NAMES, \
+    INDEX_OPERATION_NAMES, LIST_STAGES_TIMESPANS
 
 
 __author__ = "Vince Reuter"
@@ -120,7 +123,7 @@ class CLIFactory(object):
                 # When it's used, index_operation is required.
                 flags=("index_operation", ),
                 help="Name of Elasticsearch Index operation to perform",
-                choices=["insert", "remove", "exists"]
+                choices=list(INDEX_OPERATION_NAMES)
         ),
         "index_target": Argument(
                 # Generally, index name is optional. This version is required.

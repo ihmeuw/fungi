@@ -73,10 +73,16 @@ def inserted_index_and_response():
         from parsing response as JSON
     """
     index_name = DEFAULT_TEST_INDEX_NAME
-    command = "curl -XPUT {es}/".format(es=ES_URL_BASE)
+    command = "curl -XPUT {es}/{index}".format(es=ES_URL_BASE,
+                                               index=index_name)
     proc = subprocess.Popen(_subprocessify(command), stdout=subprocess.PIPE)
     response = proc.stdout.read()
-    return index_name, json.loads(response)
+    # DEBUG
+    try:
+        return index_name, json.loads(response)
+    except ValueError as e:
+        print "RESPONSE: {} ({})".format(response, type(response))
+        raise e
 
 
 
