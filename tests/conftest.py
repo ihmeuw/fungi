@@ -39,6 +39,14 @@ def assert_no_test_indices(client=ES_CLIENT):
 
 
 
+def clear_test_indices():
+    """ Upon test conclusion, clear all indices named by
+    esprov test convention; assert none are lingering. """
+    remove_test_indices(TEST_INDEX_SEARCH_STRING)
+    assert_no_test_indices()
+
+
+
 @pytest.fixture(scope="function")
 def es_client(request):
     """
@@ -51,21 +59,15 @@ def es_client(request):
     # Ensure that the test begins with no preexisting index.
     assert_no_test_indices()
 
-    def clear():
-        """ Upon test conclusion, clear all indices named by
-        esprov test convention; assert none are lingering. """
-        remove_test_indices(TEST_INDEX_SEARCH_STRING)
-        assert_no_test_indices()
-
     # Provide requesting test function with teardown.
-    request.addfinalizer(clear)
+    request.addfinalizer(clear_test_indices)
 
     return ES_CLIENT
 
 
 
 @pytest.fixture(scope="function")
-def inserted_index_and_response():
+def inserted_index_and_response(request):
     """
     Insert a default test index into the default ES client.
 
@@ -77,6 +79,9 @@ def inserted_index_and_response():
                                                index=index_name)
     proc = subprocess.Popen(_subprocessify(command), stdout=subprocess.PIPE)
     response = proc.stdout.read()
+
+    request.addfinalizer(clear_test_indices)
+
     # DEBUG
     try:
         return index_name, json.loads(response)

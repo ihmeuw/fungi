@@ -7,7 +7,6 @@ for our CLI and also serve as a basic validation of our communication with ES.
 
  """
 
-from argparse import ArgumentError
 import os
 
 import pytest
@@ -15,7 +14,7 @@ import pytest
 import bin
 from bin import cli
 from esprov.functions import \
-    INDEX_CREATION_NAMES, INDEX_DELETION_NAMES, INDEX_EXISTENCE_NAMES
+    INDEX_CREATION_NAMES, INDEX_DELETION_NAMES
 from tests.conftest import \
     count_prefixed_indices, get_prefixed_indices, \
     make_index_name, DEFAULT_TEST_INDEX_NAME, ES_CLIENT, TEST_INDEX_PREFIX
@@ -44,22 +43,20 @@ def call_cli_func(command, client=ES_CLIENT):
 
 
 
-@pytest.fixture(scope="function", params=["unsupported"])
-def unsupported_index_operation_name(request):
-    """
-    Create and return unsupported Index operation name (undefined in CLI)
-
-    :param pytest._pytest.fixtures.FixtureRequest request: test case
-        function requesting parameterization
-    :return str: unsupported Index operation name
-    """
-    return request.param
-
-
-
-@pytest.mark.skip
 class TestUnsupported:
     """ Tests for unsupported operations. """
+
+
+    @pytest.fixture(scope="function", params=["unsupported"])
+    def unsupported_index_operation_name(self, request):
+        """
+        Create and return unsupported Index operation name (undefined in CLI)
+
+        :param pytest._pytest.fixtures.FixtureRequest request: test case
+            function requesting parameterization
+        :return str: unsupported Index operation name
+        """
+        return request.param
 
 
     def test_unsupported_index_operation_subcommand(
@@ -69,10 +66,12 @@ class TestUnsupported:
 
         # Insert dummy test Index into default ES client and assert existence.
         index, response = inserted_index_and_response
-        assert index in response
+        assert index in ES_CLIENT.indices.get_alias().keys()
 
         command = "index {} {}".format(unsupported_index_operation_name, index)
-        with pytest.raises(ArgumentError):
+
+        # Attempt to execute unsupported subcommand fails on argparse.
+        with pytest.raises(SystemExit):
             call_cli_func(command)
 
 
