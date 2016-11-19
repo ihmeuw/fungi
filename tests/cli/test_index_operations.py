@@ -144,32 +144,34 @@ class TestIndexCreation:
 
 
 
-@pytest.mark.skip
 class TestIndexDeletion:
     """ Tests for deletion of an Elasticsearch Index. """
 
 
     @pytest.fixture(scope="function", params=list(INDEX_DELETION_NAMES))
-    def opname(self, request):
+    def client_and_opname(self, request, es_client):
         """ Provide full space of Index deletion aliases. """
-        return request.param
+        return es_client, request.param
 
 
-    def test_remove_nonexistent(self, es_client, opname):
+    def test_remove_nonexistent(self, client_and_opname):
         """ Attempt to remove nonexistent index is fine, no effect. """
-        call_cli_func("index {} do_not_build".format(opname), client=es_client)
+        client, opname = client_and_opname
+        call_cli_func("index {} do_not_build".format(opname), client=client)
 
 
-    def test_remove_extant(self, es_client, opname,
+    def test_remove_extant(self, client_and_opname,
                            inserted_index_and_response):
         """ Test removal of index known to ES client. """
 
+        client, opname = client_and_opname
+
         # Insert index and validate insertion.
         index, response = inserted_index_and_response
-        assert index in es_client.indices.get_alias().keys()
+        assert index in client.indices.get_alias().keys()
 
-        call_cli_func("index {} {}".format(opname, index), client=es_client)
-        assert index not in es_client.indices.get_alias().keys()
+        call_cli_func("index {} {}".format(opname, index), client=client)
+        assert index not in client.indices.get_alias().keys()
 
 
 
