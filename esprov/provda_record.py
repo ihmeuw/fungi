@@ -13,8 +13,14 @@ from elasticsearch_dsl import \
     Keyword, Mapping, Object, \
     Text, MetaField, Short
 
+from esprov import \
+    DOCTYPE_KEY, MESSAGE_KEY, TIMESTAMP_KEY, \
+    VERSION_KEY, DOCUMENT_KEY, INSTANCE_KEY, \
+    HOST_KEY, HOSTNAME_KEY, PORT_KEY, FIELDS_KEY
+
+
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-16"
+__modified__ = "2016-11-19"
 __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"

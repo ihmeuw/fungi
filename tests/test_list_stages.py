@@ -2,6 +2,7 @@
 
 from elasticsearch import Elasticsearch
 
+from conftest import code_stage_text
 from esprov import HOST, PORT
 
 __author__ = "Vince Reuter"
@@ -15,17 +16,12 @@ __modname__ = "esprov.tests.cli.test_list_stages"
 CLIENT = Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
 
 
-ELASTICSEARCH_RECORD_LINES = """
-
-""".splitlines(True)
-
-
 class TestListStagesBasic:
     """ Tests for listing recent computational stages with ES records. """
 
 
     def test_no_filters(self):
-        """ When no filtering is specified, ALL stage names should be  """
+        """ Without filtering, ALL known stage names should be returned. """
         pass
 
 

@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """ Installation setup script for Elasticsearch provenance package. """
 
-
 from codecs import open
 import os
 from setuptools import setup

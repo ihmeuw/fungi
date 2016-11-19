@@ -4,13 +4,14 @@ import json
 import logging
 import subprocess
 
-from elasticsearch import Elasticsearch
+import elasticsearch
 import pytest
 
-from esprov import HOST, PORT
+from esprov import CODE_STAGE_NAMESPACE_PREFIX, HOST, NAMESPACE_DELIMITER, PORT
+from esprov.provda_record import ProvdaRecord
 
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-16"
+__modified__ = "2016-11-19"
 __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
@@ -21,7 +22,7 @@ TEST_INDEX_PREFIX = "esprov-test"
 TEST_INDEX_SEARCH_STRING = "{}*".format(TEST_INDEX_PREFIX)
 DEFAULT_TEST_INDEX_NAME = "{}-simpletest".format(TEST_INDEX_PREFIX)
 
-ES_CLIENT = Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
+ES_CLIENT = elasticsearch.Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
 ES_URL_BASE = "http://{h}:{p}".format(h=HOST, p=PORT)
 
 LOGGER = logging.getLogger(__modname__)
@@ -186,6 +187,48 @@ def count_prefixed_indices(client, prefix=TEST_INDEX_PREFIX):
     :return int: number of indices with prefix of which client is aware
     """
     return len(get_prefixed_indices(client, prefix))
+
+
+def code_stage_text(stage_name):
+    """
+    Form a provda-compliant code stage name from given name.
+
+    :param str stage_name: name for processing stage (e.g., a script's path)
+    :return str: provda-compliant code stage name from given name
+    """
+    return "{prefix}{delim}{name}".\
+        format(prefix=CODE_STAGE_NAMESPACE_PREFIX,
+               delim=NAMESPACE_DELIMITER, name=stage_name)
+
+
+def upload_records(client, records_by_index):
+    """
+    Upload records by index to Elasticsearch client.
+
+    :param elasticsearch.client.Elasticsearch client: ES client
+        for document upload
+    :param collections.abc.Mapping[str, collections.abc.Iterable] |
+        collections.abc.Iterable records_by_index: ideally, a mapping from
+        index name to collection of records to insert; alternatively, this
+        could be provided as a simple collection of records, in which case
+        the records will be inserted into a default-named index.
+    """
+
+    try:
+        # Assume that records are given as a mapping.
+        records_by_index = records_by_index.items()
+    except AttributeError:
+        # Perhaps records were given as simple collection rather than mapping.
+        # Use default Index name.
+        records_by_index = {DEFAULT_TEST_INDEX_NAME: records_by_index}
+
+    for index_name, records in records_by_index.items():
+        # Establish the provda record mapping for current index within client.
+        ProvdaRecord.init(index=index_name, using=client)
+
+        for record in records:
+            # Create and store document for current record.
+            ProvdaRecord(index=index_name, **record).save()
 
 
 def _subprocessify(command_text):

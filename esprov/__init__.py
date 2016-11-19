@@ -4,7 +4,7 @@ import logging
 import sys
 
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-10"
+__modified__ = "2016-11-19"
 __modname__ = "esprov.esprov.__init__"
 
 
@@ -42,7 +42,6 @@ DOCTYPE_KEY = "prov"
 MESSAGE_KEY = "@message"
 TIMESTAMP_KEY = "@timestamp"
 VERSION_KEY = "@version"
-# TODO: determine what the difference here is and name accordingly.
 DOCUMENT_KEY = "document"
 INSTANCE_KEY = "instance"
 HOST_KEY = "@source_host"
