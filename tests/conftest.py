@@ -74,20 +74,19 @@ def inserted_index_and_response(request):
     :return str, dict: inserted Index name and mapping obtained
         from parsing response as JSON
     """
+
+    # Build command.
     index_name = DEFAULT_TEST_INDEX_NAME
     command = "curl -XPUT {es}/{index}".format(es=ES_URL_BASE,
                                                index=index_name)
+
+    # Execute command and capture output.
     proc = subprocess.Popen(_subprocessify(command), stdout=subprocess.PIPE)
     response = proc.stdout.read()
 
+    # Add cleanup function for test case and parse output.
     request.addfinalizer(clear_test_indices)
-
-    # DEBUG
-    try:
-        return index_name, json.loads(response)
-    except ValueError as e:
-        print "RESPONSE: {} ({})".format(response, type(response))
-        raise e
+    return index_name, json.loads(response)
 
 
 

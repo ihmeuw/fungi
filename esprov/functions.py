@@ -3,6 +3,8 @@
 import argparse
 import logging
 
+from elasticsearch_dsl import Index
+
 from esprov import \
     CODE_STAGE_NAMESPACE_PREFIX, DOCTYPE_KEY, \
     DOCUMENT_TYPENAMES, ID_ATTRIBUTE_NAME, TIMESTAMP_KEY
@@ -133,7 +135,11 @@ def index(es_client, args):
         # also ignore elasticsearch.exceptions.NotFoundError (404).
         es_client.indices.delete(index=args.index_target, ignore=[400, 404])
     elif operation_name in INDEX_EXISTENCE_NAMES:
-        LOGGER.debug("Checking existence of index %s", str(args.target_index))
+        LOGGER.debug("Checking existence of index %s", str(args.index_target))
+        exists = Index(args.index_target, using=es_client).exists()
+        LOGGER.debug("{} existence: {} ({})".format(args.index_target,
+                                                    exists, type(exists)))
+        return exists
     else:
         raise ValueError("Unexpected index operation: {} ({})".
                          format(operation_name, type(operation_name)))

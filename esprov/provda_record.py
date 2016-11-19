@@ -59,12 +59,7 @@ class ProvdaRecord(DocType):
         :param elasticsearch.client.Elasticsearch | str using: ES client or
             alias for one to use
         """
-        # DEBUG
-        try:
-            super(ProvdaRecord, cls).init(index=index, using=using)
-        except KeyError as e:
-            print "USING: {} ({})".format(using, type(using))
-            raise e
+        super(ProvdaRecord, cls).init(index=index, using=using)
 
 
     class Meta:

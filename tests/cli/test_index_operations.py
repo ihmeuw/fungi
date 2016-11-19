@@ -37,9 +37,12 @@ def call_cli_func(command, client=ES_CLIENT):
 
     :param str command: text as would be entered at a command prompt
     :param elasticsearch.client.Elasticsearch client: client to use for ES call
+    :return NoneTye | object: null for some commands, legitimate value
+        for functions for which return value is meaningful, e.g. bool
+        for Index existence check
     """
     args = cli.CLIFactory.get_parser().parse_args(command.split(" "))
-    args.func(client, args)
+    return args.func(client, args)
 
 
 
@@ -176,10 +179,19 @@ class TestIndexDeletion:
 
 class TestIndexExistence:
     """ Tests for test of existence of an Elasticsearch Index. """
-    pass
 
 
+    def test_index_does_exist(self, es_client, inserted_index_and_response):
+        """ When Index with given name is known, existence is True. """
+        index, response = inserted_index_and_response
+        assert index in es_client.indices.get_alias().keys()
+        assert call_cli_func("index exists {}".format(index))
 
-class TestIndexFetch:
-    """ Tests for fetch of information about an Elasticsearch Index. """
-    pass
+
+    def test_index_does_not_exist(self, es_client,
+                                  inserted_index_and_response):
+        """ When Index with given name is unknown, existence is False. """
+        index, response = inserted_index_and_response
+        assert index in es_client.indices.get_alias().keys()
+        unknown_index = "{}_unknown_suffix".format(index)
+        assert not call_cli_func("index exists {}".format(unknown_index))
