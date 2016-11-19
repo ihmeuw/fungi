@@ -5,7 +5,6 @@ from collections import namedtuple
 
 from esprov.functions import \
     fetch, list_stages, index, \
-    INDEX_CREATION_NAMES, INDEX_DELETION_NAMES, \
     INDEX_OPERATION_NAMES, LIST_STAGES_TIMESPANS
 
 

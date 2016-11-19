@@ -1,1 +1,0 @@
-""" Tests for use of CLI for basic document  """

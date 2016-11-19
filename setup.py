@@ -41,7 +41,11 @@ setup(
     include_package_data=True,
     zip_safe=False,
     platforms="any",
-    install_requires=[],
+    install_requires=[
+        "elasticsearch>=2.0.0,<3.0.0",
+        "elasticsearch-dsl>=2.0.0,<3.0.0"
+        "pytest>=3.0.4"
+    ],
 
     long_description=full_description,
 
