@@ -30,18 +30,19 @@ class RawAndCliValidator:
 
     def validate(self, expected, observed, output_format):
         """
-        Validate
+        Validate equality expectation between expectation and observation,
+        formatting each if necessary as indicated by output_format.
 
         :param collections.abc.Iterable expected: collection of expected
             results, possibly to be transformed
-        :param str | collections.abc.Iterable observed: collection of
-            observed results
+        :param collections.abc.Iterable observed: collection of
+            observed results, possibly to be transformed
         :param str output_format: text indicating call version of function
             under test, implying output format
         :raises ValueError: if output format indicated is unknown/unsupported
         """
         if output_format == CLI_FORMAT_NAME:
-            assert self.format_output(expected) == observed
+            assert self.format_output(expected) == self.format_output(observed)
         elif output_format == RAW_FORMAT_NAME:
             assert expected == observed
         else:
@@ -83,9 +84,9 @@ class TestListStagesBasic(RawAndCliValidator):
 
     def test_raw_client(self, es_client, output_format):
         """ No Index --> no results. """
-        expected = {}
-        observed = call_cli_func("esprov list_stages", client=es_client)
-        super(TestListStagesBasic, self).validate(expected, observed,
+        expected = set()
+        observed = call_cli_func("list_stages", client=es_client)
+        super(TestListStagesBasic, self).validate(expected, set(observed),
                                                   output_format)
 
 
@@ -95,11 +96,11 @@ class TestListStagesBasic(RawAndCliValidator):
 
         # Insert and validate Index.
         index, response = inserted_index_and_response
-        assert index in response
+        assert index in es_client.indices.get_alias().keys()
 
-        expected = {}
-        observed = call_cli_func("esprov list_stages", client=es_client)
-        super(TestListStagesBasic, self).validate(expected, observed,
+        expected = set()
+        observed = call_cli_func("list_stages", client=es_client)
+        super(TestListStagesBasic, self).validate(expected, set(observed),
                                                   output_format)
 
 
