@@ -13,7 +13,7 @@ from esprov import CODE_STAGE_NAMESPACE_PREFIX, HOST, NAMESPACE_DELIMITER, PORT
 from esprov.provda_record import ProvdaRecord
 
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-19"
+__modified__ = "2016-11-20"
 __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
@@ -284,7 +284,8 @@ def code_stage_text(stage_name):
                delim=NAMESPACE_DELIMITER, name=stage_name)
 
 
-def upload_records(client, records_by_index):
+def upload_records(client, records_by_index,
+                   index_name=DEFAULT_TEST_INDEX_NAME):
     """
     Upload records by index to Elasticsearch client.
 
@@ -295,6 +296,9 @@ def upload_records(client, records_by_index):
         index name to collection of records to insert; alternatively, this
         could be provided as a simple collection of records, in which case
         the records will be inserted into a default-named index.
+    :param str index_name: name for index in which to insert
+        the records; optional, useful for when records_by_index is
+        an ordinary collection rather than a mapping, but there's a default
     """
 
     try:
@@ -303,7 +307,7 @@ def upload_records(client, records_by_index):
     except AttributeError:
         # Perhaps records were given as simple collection rather than mapping.
         # Use default Index name.
-        records_by_index = {DEFAULT_TEST_INDEX_NAME: records_by_index}
+        records_by_index = {index_name: records_by_index}
 
     for index_name, records in records_by_index.items():
         # Establish the provda record mapping for current index within client.
