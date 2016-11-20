@@ -117,7 +117,13 @@ class CLIFactory(object):
                 help="Integer number of minutes of lag",
                 type=int
         ),
+        "id": Argument(
+                flags=("--id", ),
+                help="Only report activity/stage ID, not full document",
+                action="store_true"
+        ),
 
+        # index subcommand
         "index_operation": Argument(
                 # When it's used, index_operation is required.
                 flags=("index_operation", ),
@@ -128,7 +134,7 @@ class CLIFactory(object):
                 # Generally, index name is optional. This version is required.
                 flags=("index_target", ),
                 help="Name of Elasticsearch Index for Index operation"
-        )
+        ),
 
     }
 
@@ -142,7 +148,7 @@ class CLIFactory(object):
         ),
         _Subparser(
                 list_stages,
-                argument_names=(("duplicate", ) +
+                argument_names=(("duplicate", "id") +
                                 BASE_ARGS +
                                 LIST_STAGES_TIMESPANS)
         ),

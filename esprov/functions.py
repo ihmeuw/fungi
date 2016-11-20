@@ -97,13 +97,14 @@ def list_stages(es_client, args):
         timespan_query_data = {TIMESTAMP_KEY: {"gte": time_text, "lt": "now"}}
 
     # Match on code document instances.
-    record_type_query_data = {ID_ATTRIBUTE_NAME: CODE_STAGE_NAMESPACE_PREFIX}
+    record_type_query_data = {DOCTYPE_KEY: "activity"}
 
     search = build_search(es_client, args=args)
     query = search.query("match", **record_type_query_data)
     result = query.filter("range", **timespan_query_data)
 
-    return result
+    for response in result.scan():
+        yield response[ID_ATTRIBUTE_NAME] if args.id else response.to_dict()
 
 
 
@@ -195,7 +196,8 @@ def fetch(es_client, args):
     logger.debug("query_mapping: %s", str(query_mapping))
     result = search.query("match", **query_mapping)
 
-    return result
+    for hit in result.scan():
+        yield hit.to_dict()
 
 
 

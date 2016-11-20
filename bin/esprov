@@ -32,7 +32,11 @@ if __name__ == "__main__":
     logger.info("Querying elasticsearch...")
 
     result = args.func(es_client, args)
-    logger.debug("%d results", result.count())
 
-    for hit in result.scan():
-        print(hit.to_dict())
+    try:
+        # Assume subcommand indicating function with iterable result.
+        for hit in result:
+            print(hit)
+    except TypeError:
+        # Subcommand may've indicated function with non-iterable result.
+        print(result)

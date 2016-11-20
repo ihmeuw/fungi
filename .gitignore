@@ -8,4 +8,5 @@ dist/
 .idea/
 *.cmd
 *.curl
+*.json_lines
 
