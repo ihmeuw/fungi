@@ -24,17 +24,17 @@ class TestListStagesBasic(RawAndCliValidator):
     """ Tests for listing recent computational stages with ES records. """
 
 
-    def format_output(self, expected_results):
+    def format_output(self, results):
         """
+        Format
 
-
-        :param collections.abc.Iterable expected_results: collection of
+        :param collections.abc.Iterable results: collection of
             results to reformat
         :return str: newline-joined results, such that each stage name
             would be printed on a separate line, with trailing newline
             to reset the command-line prompt
         """
-        return "{}\n".format("\n".join(expected_results))
+        return "{}\n".format("\n".join(results))
 
 
     def test_raw_client(self, es_client, output_format):

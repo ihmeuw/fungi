@@ -67,13 +67,13 @@ class RawAndCliValidator:
 
 
     @abc.abstractmethod
-    def format_output(self, expected_results):
+    def format_output(self, results):
         """
-        Method with which to transform collection of expected results for
+        Method with which to transform collection of results for
         CLI-version of call and output; each (concrete) subclass must
         supply an implementation.
 
-        :param collections.abc.Iterable expected_results: collection of
+        :param collections.abc.Iterable results: collection of
             results to reformat
         :return object: determined by subclass implementation
         """
