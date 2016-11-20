@@ -1,23 +1,36 @@
 """ Tests for CLI use of function to list time-lagged computational stages. """
 
-from elasticsearch import Elasticsearch
-
-from conftest import code_stage_text
-from esprov import HOST, PORT
+from conftest import code_stage_text, make_index_name
 
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-16"
+__modified__ = "2016-11-19"
 __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
-__modname__ = "esprov.tests.cli.test_list_stages"
+__modname__ = "esprov.tests.test_list_stages"
 
+TEST_INDEX_NAME_SUFFICES = ["ti0", "t1", "ti1"]
+INDEX_NAMES = [make_index_name(name) for name in TEST_INDEX_NAME_SUFFICES]
+LAG_VALUES = ["-1M", "-2w", "-3d", "-12H", "-30m"]
 
-CLIENT = Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
 
 
 class TestListStagesBasic:
     """ Tests for listing recent computational stages with ES records. """
+
+
+    def test_no_data(self, es_client):
+        """ Regardless filter(s) and index(es), no data --> no results. """
+
+        # No Index defined at all.
+
+
+        # Index, but no data.
+
+
+    def test_data_no_code_stages(self):
+        """ No code stages --> no results. """
+        pass
 
 
     def test_no_filters(self):

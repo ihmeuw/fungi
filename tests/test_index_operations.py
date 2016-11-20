@@ -12,16 +12,15 @@ import os
 import pytest
 
 import bin
-from bin import cli
 from esprov.functions import \
     INDEX_CREATION_NAMES, INDEX_DELETION_NAMES
 from tests.conftest import \
-    count_prefixed_indices, get_prefixed_indices, \
+    call_cli_func, count_prefixed_indices, get_prefixed_indices, \
     make_index_name, DEFAULT_TEST_INDEX_NAME, ES_CLIENT, TEST_INDEX_PREFIX
 
 
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-17"
+__modified__ = "2016-11-19"
 __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
@@ -29,20 +28,6 @@ __modname__ = "esprov.tests.test_index_operations"
 
 
 ESPROV_PATH = os.path.join(os.path.dirname(bin.__file__), "esprov")
-
-
-def call_cli_func(command, client=ES_CLIENT):
-    """
-    Call a CLI function based on given command and with given ES client.
-
-    :param str command: text as would be entered at a command prompt
-    :param elasticsearch.client.Elasticsearch client: client to use for ES call
-    :return NoneTye | object: null for some commands, legitimate value
-        for functions for which return value is meaningful, e.g. bool
-        for Index existence check
-    """
-    args = cli.CLIFactory.get_parser().parse_args(command.split(" "))
-    return args.func(client, args)
 
 
 

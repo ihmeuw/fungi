@@ -7,6 +7,7 @@ import subprocess
 import elasticsearch
 import pytest
 
+from bin import cli
 from esprov import CODE_STAGE_NAMESPACE_PREFIX, HOST, NAMESPACE_DELIMITER, PORT
 from esprov.provda_record import ProvdaRecord
 
@@ -64,6 +65,21 @@ def es_client(request):
     request.addfinalizer(clear_test_indices)
 
     return ES_CLIENT
+
+
+
+def call_cli_func(command, client=ES_CLIENT):
+    """
+    Call a CLI function based on given command and with given ES client.
+
+    :param str command: text as would be entered at a command prompt
+    :param elasticsearch.client.Elasticsearch client: client to use for ES call
+    :return NoneTye | object: null for some commands, legitimate value
+        for functions for which return value is meaningful, e.g. bool
+        for Index existence check
+    """
+    args = cli.CLIFactory.get_parser().parse_args(command.split(" "))
+    return args.func(client, args)
 
 
 
