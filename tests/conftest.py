@@ -83,6 +83,22 @@ def call_cli_func(command, client=ES_CLIENT):
 
 
 
+@pytest.fixture(scope="function", params=["raw", "cli"])
+def output_format(request):
+    """
+    Parameterize test case function with indicator of the output format;
+    this determines execution via CLI-simulating subprocess vs.
+    the function defined in the CLI module.
+
+    :param pytest._pytest.fixtures.FixtureRequest request: test case function
+        requesting parameterization
+    :return str: indicator of way in which to invoke function under test,
+        and therefor an indicator of the output format
+    """
+    return request.param
+
+
+
 @pytest.fixture(scope="function")
 def inserted_index_and_response(request):
     """

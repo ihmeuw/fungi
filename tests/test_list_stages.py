@@ -19,13 +19,33 @@ class TestListStagesBasic:
     """ Tests for listing recent computational stages with ES records. """
 
 
-    def test_no_data(self, es_client):
-        """ Regardless filter(s) and index(es), no data --> no results. """
+    @staticmethod
+    def assert_stages(expected, observed, output_format,
+                      raw_to_cli=lambda x: x):
+        """
+        Assert equality between expected and observed results, transforming
+        expectation s
+
+        :param collections.abc.Iterable expected: collection of
+            expected results
+        :param collections.abc.Iterable observed: collection of
+            observed results
+        :param str output_format: name for way in which call was made to
+            get observed output, implying the expected format
+        :param function raw_to_cli: transformation from raw CLI function
+            return value to format output to command line
+        :return:
+        """
+
+
+    def test_no_data(self, es_client, observed_format):
+        """ Regardless of filter(s) and index(es), no data --> no results. """
 
         # No Index defined at all.
 
 
         # Index, but no data.
+        assert 
 
 
     def test_data_no_code_stages(self):
