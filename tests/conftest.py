@@ -19,6 +19,10 @@ __email__ = "vr24@uw.edu"
 __modname__ = "esprov.tests.conftest"
 
 
+CLI_FORMAT_NAME = "cli"
+RAW_FORMAT_NAME = "raw"
+OUTPUT_FORMAT_NAMES = [CLI_FORMAT_NAME, RAW_FORMAT_NAME]
+
 TEST_INDEX_PREFIX = "esprov-test"
 TEST_INDEX_SEARCH_STRING = "{}*".format(TEST_INDEX_PREFIX)
 DEFAULT_TEST_INDEX_NAME = "{}-simpletest".format(TEST_INDEX_PREFIX)
@@ -83,7 +87,7 @@ def call_cli_func(command, client=ES_CLIENT):
 
 
 
-@pytest.fixture(scope="function", params=["raw", "cli"])
+@pytest.fixture(scope="function", params=OUTPUT_FORMAT_NAMES)
 def output_format(request):
     """
     Parameterize test case function with indicator of the output format;
