@@ -1,5 +1,6 @@
 """ General test configuration/setup/constants. """
 
+import abc
 import json
 import logging
 import subprocess
@@ -31,6 +32,52 @@ ES_CLIENT = elasticsearch.Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
 ES_URL_BASE = "http://{h}:{p}".format(h=HOST, p=PORT)
 
 LOGGER = logging.getLogger(__modname__)
+
+
+
+class RawAndCliValidator:
+    """ Abstract base for test classes this sort of validation:
+     'for a given expectation, validate both the raw and CLI output versions.'
+     This provides that validation method, but each child class must define
+     the function with which to transform raw output to CLI-like format."""
+
+    __metaclass__ = abc.ABCMeta
+
+
+    def validate(self, expected, observed, output_format):
+        """
+        Validate equality expectation between expectation and observation,
+        formatting each if necessary as indicated by output_format.
+
+        :param collections.abc.Iterable expected: collection of expected
+            results, possibly to be transformed
+        :param collections.abc.Iterable observed: collection of
+            observed results, possibly to be transformed
+        :param str output_format: text indicating call version of function
+            under test, implying output format
+        :raises ValueError: if output format indicated is unknown/unsupported
+        """
+        if output_format == CLI_FORMAT_NAME:
+            assert self.format_output(expected) == self.format_output(observed)
+        elif output_format == RAW_FORMAT_NAME:
+            assert expected == observed
+        else:
+            raise ValueError("Unsupported output format: {} ({})".
+                             format(output_format, type(output_format)))
+
+
+    @abc.abstractmethod
+    def format_output(self, expected_results):
+        """
+        Method with which to transform collection of expected results for
+        CLI-version of call and output; each (concrete) subclass must
+        supply an implementation.
+
+        :param collections.abc.Iterable expected_results: collection of
+            results to reformat
+        :return object: determined by subclass implementation
+        """
+        pass
 
 
 
@@ -265,6 +312,7 @@ def upload_records(client, records_by_index):
         for record in records:
             # Create and store document for current record.
             ProvdaRecord(index=index_name, **record).save()
+
 
 
 def _subprocessify(command_text):

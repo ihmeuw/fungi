@@ -4,6 +4,7 @@ import abc
 
 from conftest import \
     call_cli_func, code_stage_text, make_index_name, \
+    RawAndCliValidator, \
     CLI_FORMAT_NAME, RAW_FORMAT_NAME
 
 __author__ = "Vince Reuter"
@@ -16,52 +17,6 @@ __modname__ = "esprov.tests.test_list_stages"
 TEST_INDEX_NAME_SUFFICES = ["ti0", "t1", "ti1"]
 INDEX_NAMES = [make_index_name(name) for name in TEST_INDEX_NAME_SUFFICES]
 LAG_VALUES = ["-1M", "-2w", "-3d", "-12H", "-30m"]
-
-
-
-class RawAndCliValidator:
-    """ Abstract base for test classes this sort of validation:
-     'for a given expectation, validate both the raw and CLI output versions.'
-     This provides that validation method, but each child class must define
-     the function with which to transform raw output to CLI-like format."""
-
-    __metaclass__ = abc.ABCMeta
-
-
-    def validate(self, expected, observed, output_format):
-        """
-        Validate equality expectation between expectation and observation,
-        formatting each if necessary as indicated by output_format.
-
-        :param collections.abc.Iterable expected: collection of expected
-            results, possibly to be transformed
-        :param collections.abc.Iterable observed: collection of
-            observed results, possibly to be transformed
-        :param str output_format: text indicating call version of function
-            under test, implying output format
-        :raises ValueError: if output format indicated is unknown/unsupported
-        """
-        if output_format == CLI_FORMAT_NAME:
-            assert self.format_output(expected) == self.format_output(observed)
-        elif output_format == RAW_FORMAT_NAME:
-            assert expected == observed
-        else:
-            raise ValueError("Unsupported output format: {} ({})".
-                             format(output_format, type(output_format)))
-
-
-    @abc.abstractmethod
-    def format_output(self, expected_results):
-        """
-        Method with which to transform collection of expected results for
-        CLI-version of call and output; each (concrete) subclass must
-        supply an implementation.
-
-        :param collections.abc.Iterable expected_results: collection of
-            results to reformat
-        :return object: determined by subclass implementation
-        """
-        pass
 
 
 
