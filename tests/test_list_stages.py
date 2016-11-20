@@ -3,6 +3,8 @@
 import json
 import elasticsearch_dsl
 
+import pytest
+
 from conftest import \
     call_cli_func, code_stage_text, make_index_name, \
     upload_records, RawAndCliValidator
@@ -111,6 +113,7 @@ class TestListStagesBasic(RawAndCliValidator):
                       output_format=output_format)
 
 
+    @pytest.mark.skip
     def test_data_no_code_stages(self, es_client, output_format):
         """ No code stages --> no results. """
 
