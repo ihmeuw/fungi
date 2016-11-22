@@ -6,13 +6,13 @@ import logging
 from elasticsearch_dsl import Index
 
 from esprov import \
-    CODE_STAGE_NAMESPACE_PREFIX, DOCTYPE_KEY, \
-    DOCUMENT_TYPENAMES, ID_ATTRIBUTE_NAME, TIMESTAMP_KEY
+    DOCTYPE_KEY, DOCUMENT_TYPENAMES, \
+    ID_ATTRIBUTE_NAME, TIMESTAMP_KEY
 from esprov.provda_record import ProvdaRecord
 from esprov.utilities import build_search
 
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-16"
+__modified__ = "2016-11-21"
 __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
@@ -20,7 +20,8 @@ __modname__ = "esprov.esprov.functions"
 
 
 # Related to list_stages
-LIST_STAGES_TIMESPANS = ("months", "weeks", "days", "hours", "minutes")
+MONTHS_NAME = "months"
+LIST_STAGES_TIMESPANS = (MONTHS_NAME, "weeks", "days", "hours", "minutes")
 ES_TIME_CHARACTERS = ('M', 'w', 'd', 'H', 'm')
 TIME_CHAR_BY_CLI_PARAM = dict(zip(LIST_STAGES_TIMESPANS, ES_TIME_CHARACTERS))
 

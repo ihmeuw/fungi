@@ -10,10 +10,11 @@ import pytest
 
 from bin import cli
 from esprov import CODE_STAGE_NAMESPACE_PREFIX, HOST, NAMESPACE_DELIMITER, PORT
+from esprov.functions import LIST_STAGES_TIMESPANS
 from esprov.provda_record import ProvdaRecord
 
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-20"
+__modified__ = "2016-11-21"
 __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
@@ -32,6 +33,16 @@ ES_CLIENT = elasticsearch.Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
 ES_URL_BASE = "http://{h}:{p}".format(h=HOST, p=PORT)
 
 LOGGER = logging.getLogger(__modname__)
+
+
+
+@pytest.fixture(scope="function", params=list(LIST_STAGES_TIMESPANS))
+def time_lag(request):
+    """ Parameterize test case with time lag such that
+     there stage(s) is/are in-bounds for a query. """
+    # TODO: implement
+    return request.param
+
 
 
 

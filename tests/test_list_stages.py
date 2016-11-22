@@ -1,5 +1,6 @@
 """ Tests for CLI use of function to list time-lagged computational stages. """
 
+import datetime
 import json
 import elasticsearch_dsl
 
@@ -9,10 +10,11 @@ from conftest import \
     call_cli_func, code_stage_text, make_index_name, \
     upload_records, RawAndCliValidator
 from esprov import DOCTYPE_KEY
+from esprov.dates_times import DT
 from esprov.provda_record import ProvdaRecord
 
 __author__ = "Vince Reuter"
-__modified__ = "2016-11-20"
+__modified__ = "2016-11-21"
 __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
@@ -81,6 +83,19 @@ class TestListStagesBasic(RawAndCliValidator):
     """ Tests for listing recent computational stages with ES records. """
 
 
+    @staticmethod
+    def time_diff(dt_text):
+        """
+
+
+        :param str dt_text: datetime-encoding text
+        :return :
+        """
+        # TODO: resume here; implement & docstring.
+        then = DT.parse(dt_text)
+        delta = datetime.datetime.now() - then
+
+
     def format_output(self, results):
         """
         Format
@@ -113,7 +128,7 @@ class TestListStagesBasic(RawAndCliValidator):
                       output_format=output_format)
 
 
-    @pytest.mark.skip
+    @pytest.mark.skip("Not fully implemented")
     def test_data_no_code_stages(self, es_client, output_format):
         """ No code stages --> no results. """
 
