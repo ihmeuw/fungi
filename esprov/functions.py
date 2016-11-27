@@ -36,23 +36,23 @@ LOGGER = logging.getLogger(__modname__)
 
 
 # TODO: other use cases to handle and implement.
-# 1 -- For file/DB (entity) (File in provda.process.rst?), agent(s) and/or process(es).
-# 2 -- For agent, fetch influenced Process(es) or generated/used File(s).
-# 3 -- For activity, fetch influenced activities or generated/used File(s).
-# 4 -- Process collection stuff
+# 1: For file/DB (entity) (File in provda.process.rst?), agent(s)/process(es).
+# 2: For agent, fetch influenced Process(es) or generated/used File(s).
+# 3: For activity, fetch influenced activities or generated/used File(s).
+# 4: Process collection stuff
 
-# 1 --> wasGeneratedBy or used
-# 2 --> wasAssociatedWith (from Process perspective)
-# 3 -->
-# 4 --> hadMember for component processes, then jump to process-level queries from there.
+# 1: wasGeneratedBy or used
+# 2: wasAssociatedWith (from Process perspective)
+# 3: hadMember for component processes, then jump to process-level queries.
 # This should inform the design decision for representing process collection.
 # The design decision around process collection relates to whether a collection
-# should be linked directly to entities as its components are (potentially more/redundant edges), and whether
-# or not the components should be represented at all (more nodes).
+# should be linked directly to entities as its components are
+# (potentially more/redundant edges), and whether
+# the components should be represented at all (more nodes).
 
 
-# TODO: completely segregate raw record strings from this module for minimal dependency and assumptions
-# TODO: consider generalizing query formation procedure (there's a common mapping/unpacking pattern.)
+# TODO: Separate raw record strings from this for min. dependency/assumption.
+# TODO: consider generalizing query formation (common map/unpack pattern)
 
 
 # Cases for listing stages:
@@ -63,14 +63,21 @@ def list_stages(es_client, args):
     """
     Use given client to query Elasticsearch for documents
     at least as recent as time indicated by given arguments.
+    Currently, supported options are time-lag-indicative ones with
+    numeric argument, and the supported flag is "--id" to indicate
+    that record ID is all that's needed, not the full record for a match.
+
+    E.g., ~ <User>$ esprov list_stages 
 
     :param elasticsearch.client.Elasticsearch es_client: client with
         which to conduct the Elasticsearch query
     :param argparse.Namespace args: binding between parameter name and
         argument value
-    :return elasticsearch_dsl.search.Search:
+    :return generator(str | dict): matches of time-based query, either as
+        full record or as a distilled representation (like text hash-esque ID)
     """
 
+    # TODO: incorporate this if it's decided to require >= 1 lag spec.
     """
     if all([arg is None for arg in LIST_STAGES_TIMESPANS]):
         raise TypeError(
@@ -79,11 +86,14 @@ def list_stages(es_client, args):
         )
     """
 
-    # TODO: support arguments about what other data in addition to stage names should be available.
-    # TODO: also support specification of whether duplicate entries should be provided. (set/list uniquefaction)
+    # TODO 1: support arguments about what other data in addition to
+    # TODO 1 (continued) stage names should be available.
+    # TODO 2: support specification of whether duplicate entries
+    # TODO 2 (continued) should be provided. (set/list uniquefaction)
 
     # Build up the time text filter.
     if all([arg is None for arg in LIST_STAGES_TIMESPANS]):
+        # Each supported timespan bound to null --> no time constraint.
         timespan_query_data = {}
     else:
         # Elasticsearch supports a time offset from current by
@@ -91,19 +101,22 @@ def list_stages(es_client, args):
         time_text = "now"
         for time_param_name, es_time_char in TIME_CHAR_BY_CLI_PARAM.items():
             this_time_span_arg = getattr(args, time_param_name)
-            if this_time_span_arg is not None:
-                time_text += "-{}{}".format(this_time_span_arg,
-                                            es_time_char)
+            if this_time_span_arg is None:
+                continue
+            time_text += "-{}{}".format(this_time_span_arg, es_time_char)
         # Bind Elasticsearch timespan key-value pairs to the timestamp key.
+        # ES uses "now" to indicate current, and we want to filter to >= lag.
         timespan_query_data = {TIMESTAMP_KEY: {"gte": time_text, "lt": "now"}}
 
     # Match on code document instances.
     record_type_query_data = {DOCTYPE_KEY: "activity"}
 
+    # Build, execute, and filter the search.
     search = build_search(es_client, args=args)
     query = search.query("match", **record_type_query_data)
     result = query.filter("range", **timespan_query_data)
 
+    # Produce results.
     for response in result.scan():
         yield response[ID_ATTRIBUTE_NAME] if args.id else response.to_dict()
 
@@ -216,8 +229,9 @@ def list_stages_TODO_stub(es_client, args, datetime_parser, datetime_writer):
         which to write text representation of datetime
     :return collections.abc.Iterable(str):
     """
-    # TODO: start with assumption of days, then can add flexibility via optional arguments or other subfunctions.
-    # TODO: the return should be the user script and affected directories or something thereabouts.
+
+    # TODO: start with assumption of days, then add flexibility via options.
+    # TODO: return should be the script & affected directories or similar.
     # There are relatively well-defined steps here.
     # Parse user input (determine/restrict datetime format.
     # CLI may allow its own sort of time format.
