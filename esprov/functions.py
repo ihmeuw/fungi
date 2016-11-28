@@ -67,7 +67,8 @@ def list_stages(es_client, args):
     numeric argument, and the supported flag is "--id" to indicate
     that record ID is all that's needed, not the full record for a match.
 
-    E.g., ~ <User>$ esprov list_stages 
+    E.g., get ID for stages run within last 3.5 days
+    ~ <User>$ esprov list_stages -id -d 3 -H 12
 
     :param elasticsearch.client.Elasticsearch es_client: client with
         which to conduct the Elasticsearch query

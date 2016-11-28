@@ -326,8 +326,26 @@ def upload_records(client, records_by_index,
 
         for record in records:
             # Create and store document for current record.
-            ProvdaRecord(index=index_name, **record).save()
+            ProvdaRecord(index=index_name, using=client, **record).save()
 
+
+def parse_records_text(record_texts):
+    """
+    Transform collection of mappings-encoding text into mappings collection.
+
+    :param iterable(str) record_texts: collection of records text
+    :return iterable(dict): collection of mappings parsed from text
+    """
+    records = []
+    for record_text in record_texts:
+        try:
+            record = json.loads(record_text)
+        except ValueError as e:
+            print "RECORD TEXTS: {}".format(record_texts)
+            print "RECORD TEXT: {}".format(record_text)
+            raise e
+        records.append(record)
+    return records
 
 
 def _subprocessify(command_text):
