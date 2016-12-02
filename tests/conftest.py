@@ -175,6 +175,8 @@ def inserted_index_and_response(request):
     command = "curl -XPUT {es}/{index}".format(es=ES_URL_BASE,
                                                index=index_name)
 
+    # TODO: use Popen.communicate() instead; see "Note" on:
+    # https://docs.python.org/2/library/subprocess.html#subprocess.check_call
     # Execute command and capture output.
     proc = subprocess.Popen(_subprocessify(command), stdout=subprocess.PIPE)
     response = proc.stdout.read()
