@@ -65,6 +65,9 @@ class ProvdaRecord(DocType):
         :param elasticsearch.client.Elasticsearch | str using: ES client or
             alias for one to use
         """
+        # Note that this signature does not match that of superclass.
+        # This is because the superclass requires neither argument,
+        # but we want to be more restrictive w.r.t.
         super(ProvdaRecord, cls).init(index=index, using=using)
 
 
