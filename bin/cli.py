@@ -49,15 +49,18 @@ class _Subparser(object):
         """
         Function, argument names, and description define a CLI subparser.
 
-        :param callable function:
-        :param collections.abc.(str) argument_names: sequence
+        :param callable function: CLI subcommand/program/function to
+            invoke as a result of a command
+        :param collections.abc.(str) argument_names: sequence of names of
+            arguments that the given function accepts
         :param str description: subcommand functional description
         """
-        # TODO: test description derivation from __doc__.
+        # TODO: test the derivation from __doc__ of the description/help.
         self.function = function
         self.argument_names = argument_names
         self.description = \
             description or function.__doc__.strip().split("\n")[0]
+
 
 
 class CLIFactory(object):

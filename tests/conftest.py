@@ -40,9 +40,8 @@ LOGGER = logging.getLogger(__modname__)
 def time_lag(request):
     """ Parameterize test case with time lag such that
      there stage(s) is/are in-bounds for a query. """
-    # TODO: implement
+    # TODO: implement this for accuracy tests to test specific function(s).
     return request.param
-
 
 
 
@@ -133,6 +132,8 @@ def es_client(request):
 def call_cli_func(command, client=ES_CLIENT):
     """
     Call a CLI function based on given command and with given ES client.
+    This should ALWAYS MATCH the parse-and-call pattern that's used in the
+    actual esprov executable (bin/esprov).
 
     :param str command: text as would be entered at a command prompt
     :param elasticsearch.client.Elasticsearch client: client to use for ES call

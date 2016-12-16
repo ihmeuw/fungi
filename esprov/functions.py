@@ -192,7 +192,7 @@ def fetch(es_client, args):
     search = build_search(es_client, args=args)
 
     # Assign the query mapping (bind doctype to match as needed.)
-    if not args.doctype:
+    if args.doctype is None:
         # No doctype --> grab all records/documents.
         logger.debug("No doctype")
         query_mapping = {}
@@ -213,6 +213,7 @@ def fetch(es_client, args):
 
     for hit in result.scan():
         yield hit.to_dict()
+
 
 
 
