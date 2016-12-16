@@ -1,6 +1,6 @@
 """ Provenance-in-Elasticsearch query functions. """
 
-from copy import deepcopy
+import json
 
 import logging
 
@@ -41,6 +41,35 @@ class Record(object):
             else:
                 mapped_fields[attr_name] = value
         self.__dict__.update(mapped_fields)
+
+
+    def __eq__(self, other):
+        """
+        Determine whether another record is equivalent to this one.
+
+        :param esprov.graph.nodes.Record other: record to compare with this one
+        :return bool: flag indicating whether another record is
+            equivalent to this one
+        """
+        return self.__dict__ == other.__dict__
+
+
+    def __ne__(self, other):
+        """
+        Determine whether another record is not equivalent to this one.
+
+        :param esprov.graph.nodes.Record other: record to compare with this one
+        :return bool: flag indicating whether another record is
+            not equivalent to this one
+        """
+        return not self == other
+
+
+    def __hash__(self):
+        """ Since we're overriding the equality comparison operators as we're
+        interested in logical equivalence of dictionary representations each
+        operand in the comparison, we should redefine hash function, too. """
+        return json.dumps(self.__dict__)
 
 
 

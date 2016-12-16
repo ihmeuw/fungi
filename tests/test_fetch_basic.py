@@ -25,6 +25,8 @@ class TestBasicFetch:
     # This is needed even to make an assertion about exception raising.
     # TODO: test on-the-fly capability.
     # TODO: note that fetch() supports -i/--index, -n/--num_docs, and --doctype.
+    # TODO: test invalid arguments.
+    # Note how null arguments are covered by cases where CLI call omits option.
     # TODO: presence table:
     # index    num_docs    doctype
     # F        F           F
@@ -85,15 +87,11 @@ class TestBasicFetch:
         assert [] == list(call_cli_func(command))
 
 
-    def test_null_option_argument(self):
-        """ Null argument --> absence of option from CLI call --> valid. """
-        pass
-
-
     def test_no_arguments(self):
         """ When no doctype is specified, all documents match. """
-        pass
-
+        # This is essentially a smoketest
+        expected_results = {}
+        assert
 
 
     @pytest.mark.parametrize(argnames="invalid_doctype",
