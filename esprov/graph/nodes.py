@@ -1,10 +1,10 @@
 """ Provenance-in-Elasticsearch query functions. """
 
+from copy import deepcopy
+
 import logging
 
-from elasticsearch_dsl import Search
-
-from esprov import DOCTYPE_KEY, DOCUMENT_TYPENAMES
+from esprov import ATTRIBUTE_NAME_BY_FIELD_NAME
 
 __author__ = "Vince Reuter"
 __modified__ = "2016-11-10"
@@ -14,7 +14,33 @@ __email__ = "vr24@uw.edu"
 __modname__ = "esprov.esprov.graph.nodes"
 
 
-__all__ = ["Activity", "Agent", "Entity"]
+__all__ = ["Activity", "Agent", "Entity", "Record"]
+
+
+_LOGGER = logging.getLogger(__modname__)
+
+
+
+class Record(object):
+    """ ADT for individual record; 1:1 correspondence with JSON/dict. """
+
+    def __init__(self, record_data):
+        """
+        Create the record instance from a key-value mapping
+
+        :param collection.abc.Mapping record_data: mapping between creator-/
+            sender-side record attribute field name and field value
+        """
+        mapped_fields = {}
+        unmapped_fields = {}
+        for field, value in record_data.items():
+            try:
+                attr_name = ATTRIBUTE_NAME_BY_FIELD_NAME[field]
+            except KeyError:
+                unmapped_fields[field] = value
+            else:
+                mapped_fields[attr_name] = value
+        self.__dict__.update(mapped_fields)
 
 
 
@@ -27,6 +53,7 @@ class Node():
 
 class Activity(object):
     """ Representation of an activity in the provenance model. """
+    pass
 
 
 

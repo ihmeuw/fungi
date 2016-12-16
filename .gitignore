@@ -9,4 +9,5 @@ dist/
 *.cmd
 *.curl
 *.json_lines
+*.ipynb
 

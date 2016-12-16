@@ -1,12 +1,12 @@
 """ Tests for the basic record-fetching functionality """
 
-from elasticsearch import Elasticsearch
+import itertools
+
 import pytest
 
 from bin import cli
 from conftest import call_cli_func, ES_CLIENT
-import esprov
-from esprov import functions, DOCUMENT_TYPENAMES
+from esprov import functions, DOCTYPE_KEY, DOCUMENT_TYPENAMES
 
 
 __author__ = "Vince Reuter"
@@ -18,30 +18,6 @@ __modname__ = "provda_sandbox.tests.functions.test_fetch_basic"
 
 
 
-@pytest.fixture(scope="function", params=esprov.DOCUMENT_TYPENAMES)
-def known_doctype(request):
-    """
-    Parameterize a test case with name of a known document type.
-
-    :param pytest._pytest.fixtures.FixtureRequest request: test case
-        that is requesting parameterization
-    :return str: parameter for requesting test case
-    """
-    return request.param
-
-
-@pytest.fixture(scope="function")
-def es_client(request):
-    """
-    Provide requesting test case with an Elasticsearch query client.
-
-    :param pytest._pytest.fixtures.FixtureRequest request: test case
-        requesting an Elasticsearch client instance
-    :return elasticsearch.Elasticsearch: Elasticsearch client instance
-    """
-    return Elasticsearch()
-
-
 class TestBasicFetch:
     """ Tests for basic provenance record fetching functionality """
     # Note that in some of these situations, due to lazy generator evaluation,
@@ -50,13 +26,13 @@ class TestBasicFetch:
     # TODO: test on-the-fly capability.
     # TODO: note that fetch() supports -i/--index, -n/--num_docs, and --doctype.
 
-    DOCTYPE_BASE = "fetch --doctype{}"
+    DOCTYPE_CMD_BASE = "fetch --doctype{}"
 
 
     def test_missing_doctype(self):
         with pytest.raises(SystemExit):
             # Here, exception is in parsing, so we need no evaluation forcing.
-            call_cli_func(command=self.DOCTYPE_BASE.format(""))
+            call_cli_func(command=self.DOCTYPE_CMD_BASE.format(""))
 
 
     @pytest.mark.parametrize(argnames="invalid_doctype",
@@ -76,13 +52,39 @@ class TestBasicFetch:
             list(call_cli_func(command))
 
 
+    @pytest.mark.parametrize(argnames="known_doctype",
+                             argvalues=DOCUMENT_TYPENAMES)
     def test_known_doctype(self, known_doctype):
-        pass
+        """ With specific doctype, only matched docs are returned. """
+
+        command = self.DOCTYPE_CMD_BASE.format(" {}".format(known_doctype))
+        results = list(call_cli_func(command))
+        violators = filter(
+                lambda record: record[DOCTYPE_KEY] == known_doctype, results
+        )
+
+        # Fail the test if there's even a single violator.
+        if len(violators) > 0:
+            raise AssertionError(
+                    "{} result(s) don't match expected doctype {}: {}".
+                    format(len(violators), known_doctype, "\n".join(violators))
+            )
+        # No violators --> test passes.
 
 
+    @pytest.mark.parametrize()
     def test_specific_index(self, known_doctype):
+        """ With specific index, only docs from it are returned. """
         pass
 
 
-    def test_hit_limit(self, known_doctype):
-        pass
+    @pytest.mark.parametrize(
+            argnames="num_docs,doctype",
+            argvalues=itertools.product([2, 5], DOCUMENT_TYPENAMES)
+    )
+    def test_num_docs(self, num_docs, known_doctype):
+        """ Ensure that the results count can be controlled via CLI. """
+        command = "fetch --doctype {} --num_docs {}".format(known_doctype,
+                                                            num_docs)
+        results = call_cli_func(command)
+        assert num_docs == len(list(results))

@@ -49,6 +49,22 @@ HOSTNAME_KEY = "host"
 PORT_KEY = "port"
 FIELDS_KEY = "@fields"
 
+
+# Define the attributes/fields accessible on record instance.
+ATTRIBUTE_NAME_BY_FIELD_NAME = {
+        DOCTYPE_KEY: "type",
+        MESSAGE_KEY: "message",
+        TIMESTAMP_KEY: "time",
+        VERSION_KEY: "version",
+        DOCUMENT_KEY: "document",
+        INSTANCE_KEY: "instance",
+        HOST_KEY: "source",
+        HOSTNAME_KEY: "hostname",
+        PORT_KEY: "port",
+        FIELDS_KEY: "fields"
+}
+
+
 # TODO: this should be configurable.
 # TODO: there should be a document fieldname-to-relationship mapping
 # TODO: design decision -- translation responsibility on client or internal?
