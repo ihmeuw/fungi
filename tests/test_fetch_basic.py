@@ -27,18 +27,6 @@ def known_doctype(request):
     return request.param
 
 
-@pytest.fixture(scope="function", params=[None, "", "invalid_doctype"])
-def unknown_doctype(request):
-    """
-    Parameterize a test case with unknown document type.
-
-    :param pytest._pytest.fixtures.FixtureRequest request: test case
-        that is requesting parameterization
-    :return NoneType | str: parameter for requesting test case
-    """
-    return request.param
-
-
 @pytest.fixture(scope="function")
 def es_client(request):
     """
@@ -53,9 +41,11 @@ def es_client(request):
 
 class TestBasicFetch:
     """ Tests for basic provenance record fetching functionality """
-
     # TODO: test on-the-fly capability.
 
+
+    @pytest.mark.parametrize(argnames="unknown_doctype",
+                             argvalues=[None, "", "invalid_doctype"])
     def test_unknown_doctype(self, es_client, unknown_doctype):
         with pytest.raises(ValueError):
             cli.fetch(es_client, unknown_doctype)
