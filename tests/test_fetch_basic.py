@@ -25,18 +25,79 @@ class TestBasicFetch:
     # This is needed even to make an assertion about exception raising.
     # TODO: test on-the-fly capability.
     # TODO: note that fetch() supports -i/--index, -n/--num_docs, and --doctype.
+    # TODO: presence table:
+    # index    num_docs    doctype
+    # F        F           F
+    # F        F           T
+    # F        T           F
+    # F        T           T
+    # T        F           F
+    # T        F           T
+    # T        T           F
+    # T        T           T
 
-    DOCTYPE_CMD_BASE = "fetch --doctype{}"
+
+    # Group the option names by type of argument expected.
+    # Note also the potential to partition on time-of-application, i.e.
+    # pre-result (matching) vs. post-result (filtering).
+    TEXTUAL_OPTIONS = ["index", "doctype"]
+    NUMERIC_OPTIONS = ["num_docs"]
+
+    # Also provide a base all-options collection.
+    ALL_OPTIONS = TEXTUAL_OPTIONS + NUMERIC_OPTIONS
 
 
-    def test_missing_doctype(self):
+    @pytest.mark.parametrize(argnames="option_name", argvalues=ALL_OPTIONS)
+    def test_doctype_as_flag_not_option(self, option_name):
+        """ Argument-expecting option as flag --> parse error --> sys exit. """
+        command = "fetch --{}".format(option_name)
         with pytest.raises(SystemExit):
             # Here, exception is in parsing, so we need no evaluation forcing.
-            call_cli_func(command=self.DOCTYPE_CMD_BASE.format(""))
+            call_cli_func(command)
+
+
+    @pytest.mark.parametrize(
+            argnames="option,argument",
+            argvalues=[("index", "unknown_index"),
+                       ("doctype", "unknown_doctype")]
+    )
+    # TODO: choose parametrization strategy here.
+    def test_invalid_option_argument(self, option, argument):
+        """ Invalid argument for fetch option --> exception with func call. """
+        command = "fetch --{o} {a}".format(o=option, a=argument)
+        with pytest.raises(Exception):
+            list(call_cli_func(command))
+
+
+    # This is analogous to invalid test cases for text arguments.
+    # Here, though, we get an empty result rather than an exception.
+    def test_num_docs_zero(self):
+        """ Zero as result count is valid; the result should just be empty. """
+        assert [] == list(call_cli_func("fetch --num_docs 0"))
+
+
+    # This is analogous to invalid test cases for text arguments.
+    # Here, though, we get an empty result rather than an exception.
+    @pytest.mark.parametrize(argnames="num_docs", argvalues=[-5, -1])
+    def test_num_docs_negative(self, num_docs):
+        """ Negative count is questionable; let's allow & return empty. """
+        command = "fetch --num_docs {}".format(num_docs)
+        assert [] == list(call_cli_func(command))
+
+
+    def test_null_option_argument(self):
+        """ Null argument --> absence of option from CLI call --> valid. """
+        pass
+
+
+    def test_no_arguments(self):
+        """ When no doctype is specified, all documents match. """
+        pass
+
 
 
     @pytest.mark.parametrize(argnames="invalid_doctype",
-                             argvalues=["", " ", "  ", ])
+                             argvalues=["", " ", "  "])
     def test_invalid_empty_doctypes(self, invalid_doctype):
         """ Empty/whitespace doctype causes ValueError in document fetcher. """
         args = cli.CLIFactory.get_parser().parse_args(["fetch"])
@@ -57,7 +118,7 @@ class TestBasicFetch:
     def test_known_doctype(self, known_doctype):
         """ With specific doctype, only matched docs are returned. """
 
-        command = self.DOCTYPE_CMD_BASE.format(" {}".format(known_doctype))
+        command = "fetch --doctype{}".format(" {}".format(known_doctype))
         results = list(call_cli_func(command))
         violators = filter(
                 lambda record: record[DOCTYPE_KEY] == known_doctype, results
@@ -72,10 +133,22 @@ class TestBasicFetch:
         # No violators --> test passes.
 
 
-    @pytest.mark.parametrize()
-    def test_specific_index(self, known_doctype):
+    @pytest.mark.parametrize(
+        argnames="known_index,known_doctype",
+        argvalues=
+    )
+    # TODO: determine parametrization strategy.
+
+    def test_known_index(self, known_doctype, known_index):
         """ With specific index, only docs from it are returned. """
+        # TODO: parametrize with known index names here.
         pass
+
+
+    @pytest.mark.parametrize()
+    def test_unknown_index(self, index):
+        command = "fetch --index {}".format(index)
+        results = call_cli_func(command)
 
 
     @pytest.mark.parametrize(
