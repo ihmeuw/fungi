@@ -78,7 +78,11 @@ class CLIFactory(object):
         ),
         "num_docs": Argument(
                 flags=("-n", "--num_docs"),
-                help="Limit for number of search hits",
+                help="Limit for number of search hits; this is a 'dumb' "
+                     "filter insofar as it makes no attempt to logically or "
+                     "evenly sample from a partitioned result set. That is, "
+                     "the program will simply take the first num_docs records "
+                     "from the result, disregarding other query components.",
                 type=int
         ),
 

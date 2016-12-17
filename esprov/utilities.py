@@ -28,14 +28,3 @@ def build_search(es_client, args):
     search = Search(using=es_client, index=index)
     logging.debug("Search: {}".format(search.to_dict()))
     return search
-
-
-def violators():
-    """
-    Check each element of an iterable for a condition, yielding back violators.
-
-    :return collections.abc.Iterable: list or filter object, depending on
-        major Python version, of any elements for which the supplied
-        predicate returns False
-    """
-    return filter()
