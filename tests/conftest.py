@@ -6,6 +6,7 @@ import logging
 import subprocess
 
 import elasticsearch
+from elasticsearch_dsl import connections
 import pytest
 
 from bin import cli
@@ -19,6 +20,9 @@ __credits__ = ["Vince Reuter"]
 __maintainer__ = "Vince Reuter"
 __email__ = "vr24@uw.edu"
 __modname__ = "esprov.tests.conftest"
+
+
+connections.connections.configure(default={"host": HOST, "port": PORT})
 
 
 CLI_FORMAT_NAME = "cli"
@@ -325,11 +329,12 @@ def upload_records(client, records_by_index,
 
     for index_name, records in records_by_index.items():
         # Establish the provda record mapping for current index within client.
-        ProvdaRecord.init(index=index_name, using=client)
+        ProvdaRecord.init(index=index_name)
 
         for record in records:
             # Create and store document for current record.
-            ProvdaRecord(index=index_name, using=client, **record).save()
+            ProvdaRecord(index=index_name, **record).\
+                    save(client=client, index=index_name)
 
 
 def parse_records_text(record_texts):
@@ -341,6 +346,7 @@ def parse_records_text(record_texts):
     """
     records = []
     for record_text in record_texts:
+        # DEBUG
         try:
             record = json.loads(record_text)
         except ValueError as e:

@@ -30,10 +30,10 @@ class TestBasicFetch:
     # Note how null arguments are covered by cases where CLI call omits option.
     # TODO: presence table:
     # index    num_docs    doctype
-    # F        F           F
-    # F        F           T
-    # F        T           F
-    # F        T           T
+    # F        F           F        DON'T TEST, as we want to use test index.
+    # F        F           T        DON'T TEST, as we want to use test index.
+    # F        T           F        DON'T TEST, as we want to use test index.
+    # F        T           T        DON'T TEST, as we want to use test index.
     # T        F           F
     # T        F           T
     # T        T           F
@@ -46,7 +46,6 @@ class TestBasicFetch:
     # 3 -- upload_records(client, records_by_index, index_name)
     # 4 -- get observation(s) with call_cli_func()
     # 5 -- validation(s) / assertion(s)
-
 
     # Group the option names by type of argument expected.
     # Note also the potential to partition on time-of-application, i.e.
@@ -80,48 +79,29 @@ class TestBasicFetch:
             list(call_cli_func(command, client=es_client))
 
 
-    def test_num_docs_zero(self, es_client):
-        """ Zero as result count is valid; the result should just be empty. """
-        # This is analogous to invalid test cases for text arguments.
-        # Here, though, we get an empty result rather than an exception.
-        assert [] == list(call_cli_func("fetch --num_docs 0",
-                                        client=es_client))
-
-
-    @pytest.mark.parametrize(argnames="num_docs", argvalues=[-5, -1])
-    def test_num_docs_negative(self, num_docs, es_client):
-        """ Negative count is questionable; let's allow & return empty. """
-        # This is analogous to invalid test cases for text arguments.
-        # Here, though, we get an empty result rather than an exception.
-        command = "fetch --num_docs {}".format(num_docs)
-        assert [] == list(call_cli_func(command, client=es_client))
-
-
     @pytest.mark.parametrize(
             argnames="option_and_argument",
             argvalues=itertools.product(ALL_OPTIONS, ["", " ", "  "]))
     def test_invalid_whitespace_option_argument(
-            self, invalid_doctype, es_client
+            self, option_and_argument, es_client
     ):
         """ Empty/whitespace doctype causes ValueError in document fetcher. """
         # Do the parsing without any options.
         args = cli.CLIFactory.get_parser().parse_args(["fetch"])
         # Manually set target option to invalid argument within args namespace.
-        setattr(args, "doctype", invalid_doctype)
+        option, argument = option_and_argument
+        setattr(args, option, argument)
         with pytest.raises(ValueError):
             list(functions.fetch(es_client, args))
 
 
-    def test_no_arguments(self, es_client):
-        """ When no doctype is specified, all documents match. """
-        # This is essentially a smoketest since there are no arguments.
-        # The only real difference here is the check for concordance between
-        # expected results count and observed results count.
-        upload_records(es_client, ALL_LOGS)
-        expected_results_count = len(ALL_LOGS)
-        observed_results_count = \
-                len(list(call_cli_func("fetch", client=es_client)))
-        assert expected_results_count == observed_results_count
+    @pytest.mark.parametrize(argnames="num_docs", argvalues=[-5, -1, 0])
+    def test_num_docs_corner(self, num_docs, es_client):
+        """ Negative count is questionable; let's allow & return empty. """
+        # This is analogous to invalid test cases for text arguments.
+        # Here, though, we get an empty result rather than an exception.
+        command = "fetch --num_docs {}".format(num_docs)
+        assert [] == list(call_cli_func(command, client=es_client))
 
 
     def test_just_index(self, es_client):
@@ -164,55 +144,52 @@ class TestBasicFetch:
 
     @pytest.mark.parametrize(argnames="known_doctype",
                              argvalues=DOCUMENT_TYPENAMES)
-    def test_just_doctype(self, known_doctype, es_client):
+    def test_doctype(self, known_doctype, es_client):
         """ With specific doctype, only matched docs are returned. """
 
         command = "fetch --doctype{}".format(" {}".format(known_doctype))
         results = list(call_cli_func(command, client=es_client))
         violators = filter(
-            lambda record: record[DOCTYPE_KEY] == known_doctype, results
+                lambda record: record[DOCTYPE_KEY] == known_doctype,
+                results
         )
 
         # Fail the test if there's even a single violator.
-        if len(violators) > 0:
-            raise AssertionError(
-                "{} result(s) don't match expected doctype {}: {}".
-                    format(len(violators), known_doctype, "\n".join(violators))
-            )
+        assert len(violators) == 0, \
+                "{} result(s) don't match expected doctype {}: {}".\
+                format(len(violators), known_doctype, "\n".join(violators))
         # No violators --> test passes.
 
 
     @pytest.mark.parametrize(
-            argnames="num_docs,doctype",
-            argvalues=itertools.product([2, 5], DOCUMENT_TYPENAMES)
+            argnames="count_and_records",
+            argvalues=zip(
+                    [1, 2, 3, 4],
+                    [ACTIVITY_LOGS, CODE_LOGS,
+                     DOC_LOGS, NON_ENTITY_NON_ACTIVITY_LOGS]
+            )
     )
-    def test_just_num_docs(self, num_docs, known_doctype, es_client):
+    def test_num_docs(self, count_and_records, es_client):
         """ Ensure that the results count can be controlled via CLI. """
-        command = "fetch --doctype {} --num_docs {}".format(known_doctype,
-                                                            num_docs)
+
+        # Check that we have more records than the count to which we'll filter.
+        # That is, ensure that making assertion about filtration has meaning.
+        num_docs, records = count_and_records
+        assert num_docs < len(records)
+        upload_records(client=es_client, records_by_index=records)
+
+        # Make the assertion once results are obtained from command call.
+        command = "fetch --num_docs {}".format(num_docs)
         results = call_cli_func(command, client=es_client)
         assert num_docs == len(list(results))
 
 
+    @pytest.mark.skip("Unimplemented")
     @pytest.mark.parametrize(
-            argnames="option_and_argument",
-            argvalues=itertools.product()
+        argnames="num_docs,doctype",
+        argvalues=itertools.product([3, 4], DOCUMENT_TYPENAMES)
     )
-    def test_index_and_doctype(self):
-        """ Test specificity of command with explicit index and doctype. """
-        pass
-
-
-    def test_index_and_num_docs(self):
-        """ Test simultaneous  """
-        pass
-
-
-    def test_doctype_and_num_docs(self):
-        """  """
-        pass
-
-
-    def test_index_doctype_and_num_docs(self):
-        """  """
-        pass
+    def test_doctype_and_num_docs(self, num_docs, doctype):
+        """ Ensure that doctype and docs count can be used in tandem. """
+        command = "fetch --doctype {} --num_docs {}".format(doctype,
+                                                            num_docs)
