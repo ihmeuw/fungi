@@ -337,8 +337,7 @@ def upload_records(client, records_by_index,
             # Create and store document for current record.
             # DEBUG
             try:
-                ProvdaRecord(index=index_name, **record).save(index=index_name,
-                                                              validate=False)
+                ProvdaRecord(**record).save(index=index_name, validate=False)
             except ElasticsearchException as e:
                 print("index_name: {}".format(index_name))
                 print("record: {}".format(record))

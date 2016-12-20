@@ -76,7 +76,6 @@ class ProvdaRecord(DocType):
         """ Flexibility and metadata handling for records. """
 
         all = MetaField(enabled=False)   # We don't need "catch-all" '_all'
-        index = MetaField(enable=False)  # We don't need index within record.
         dynamic = MetaField("strict")    # Raise error for non-standard record.
 
         # Critically, we fix the mapping for records based on provda format.
