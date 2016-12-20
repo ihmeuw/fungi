@@ -6,8 +6,10 @@ import logging
 import subprocess
 
 import elasticsearch
+from elasticsearch.exceptions import ElasticsearchException
 from elasticsearch_dsl import connections
 import pytest
+from urllib3.exceptions import RequestError
 
 from bin import cli
 from esprov import CODE_STAGE_NAMESPACE_PREFIX, HOST, NAMESPACE_DELIMITER, PORT
@@ -333,8 +335,15 @@ def upload_records(client, records_by_index,
 
         for record in records:
             # Create and store document for current record.
-            ProvdaRecord(index=index_name, **record).save(index=index_name,
-                                                          validate=False)
+            # DEBUG
+            try:
+                ProvdaRecord(index=index_name, **record).save(index=index_name,
+                                                              validate=False)
+            except ElasticsearchException as e:
+                print("index_name: {}".format(index_name))
+                print("record: {}".format(record))
+                print("dir(client): {}".format("\n".join(dir(client))))
+                raise e
 
 
 def parse_records_text(record_texts):
