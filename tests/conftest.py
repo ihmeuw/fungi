@@ -333,8 +333,8 @@ def upload_records(client, records_by_index,
 
         for record in records:
             # Create and store document for current record.
-            ProvdaRecord(index=index_name, **record).\
-                    save(client=client, index=index_name)
+            ProvdaRecord(index=index_name, **record).save(index=index_name,
+                                                          validate=False)
 
 
 def parse_records_text(record_texts):

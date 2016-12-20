@@ -80,26 +80,3 @@ class ProvdaRecord(DocType):
 
         # Critically, we fix the mapping for records based on provda format.
         mapping = MAPPING
-
-
-    def save(self, client, index=None):
-        """
-
-
-        :param elasticsearch.client.Elasticsearch client: ES instance to use
-        :param str index: name of ES index into which to save record
-        :return:
-        """
-        meta = client.index(
-            index=self._get_index(index),
-            doc_type=self._doc_type.name,
-            body=self.to_dict(),
-        )
-        return meta["created"]
-
-
-    def to_dict(self, include_meta=False, exclude_client=True):
-        result = super(ProvdaRecord, self).to_dict(include_meta)
-        if exclude_client and "using" in result:
-            del result["using"]
-        return result
