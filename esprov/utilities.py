@@ -13,7 +13,7 @@ __email__ = "vr24@uw.edu"
 __modname__ = "esprov.esprov.utilities"
 
 
-INVALID_ITEMS_LIMIT_EXCEPTION = ValueError
+ITEMS_COUNT_LOWER_BOUND = 0
 
 
 def build_search(es_client, args):
@@ -55,8 +55,15 @@ def capped(items, limit):
     limit = int(limit)
 
     if limit < 1:
-        raise INVALID_ITEMS_LIMIT_EXCEPTION("Need positive items limit; "
-                                            "got {}".format(limit))
+        raise IllegalItemsLimitException(limit, min=1)
     else:
         logging.debug("Yielding %d items", limit)
         return itertools.islice(items, limit)
+
+
+class IllegalItemsLimitException(Exception):
+    """ Represent case of illogical items count for iterable. """
+
+    def __init__(self, limit, min=ITEMS_COUNT_LOWER_BOUND):
+        reason = "Lower bound for items limit is {}; got {}".format(min, limit)
+        super(IllegalItemsLimitException, self).__init__(reason)

@@ -8,7 +8,7 @@ from bin import cli
 from .conftest import call_cli_func, make_index_name, upload_records
 from .data import *
 from esprov import functions, DOCTYPE_KEY, DOCUMENT_TYPENAMES
-from esprov.utilities import INVALID_ITEMS_LIMIT_EXCEPTION
+from esprov.utilities import IllegalItemsLimitException
 
 
 __author__ = "Vince Reuter"
@@ -102,7 +102,7 @@ class TestBasicFetch:
         # This is analogous to invalid test cases for text arguments.
         # Here, though, we get an empty result rather than an exception.
         command = "fetch --num_docs {}".format(num_docs)
-        with pytest.raises(INVALID_ITEMS_LIMIT_EXCEPTION):
+        with pytest.raises(IllegalItemsLimitException):
             list(call_cli_func(command, client=es_client))
 
 
