@@ -10,4 +10,5 @@ dist/
 *.curl
 *.json_lines
 *.ipynb
+*.txt
 

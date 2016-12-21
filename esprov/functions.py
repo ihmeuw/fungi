@@ -9,7 +9,7 @@ from esprov import \
     DOCTYPE_KEY, DOCUMENT_TYPENAMES, \
     ID_ATTRIBUTE_NAME, TIMESTAMP_KEY
 from esprov.provda_record import ProvdaRecord
-from esprov.utilities import build_search
+from esprov.utilities import build_search, capped
 
 __author__ = "Vince Reuter"
 __modified__ = "2016-11-21"
@@ -115,7 +115,10 @@ def list_stages(es_client, args):
     # Build, execute, and filter the search.
     search = build_search(es_client, args=args)
     query = search.query("match", **record_type_query_data)
-    result = query.filter("range", **timespan_query_data)
+    if timespan_query_data:
+        result = query.filter("range", **timespan_query_data)
+    else:
+        result = query
 
     # Produce results.
     for response in result.scan():
@@ -208,10 +211,16 @@ def fetch(es_client, args):
     # TODO: empty query is logical here, but is it valid?
     # TODO: make use of the count() member of Search for testing.
 
-    logger.debug("query_mapping: %s", str(query_mapping))
-    result = search.query("match", **query_mapping)
+    if query_mapping:
+        logger.debug("query_mapping: %s", str(query_mapping))
+        result = search.query("match", **query_mapping)
+    else:
+        logger.debug("Executing 'match_all' query")
+        result = search
 
-    for hit in result.scan():
+    # DEBUG
+    logger.debug("Yielding %s (%s) query results...", args.num_docs, type(args.num_docs))
+    for hit in capped(items=result.scan(), limit=args.num_docs):
         yield hit.to_dict()
 
 
