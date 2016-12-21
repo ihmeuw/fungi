@@ -6,10 +6,8 @@ import logging
 import subprocess
 
 import elasticsearch
-from elasticsearch.exceptions import ElasticsearchException
 from elasticsearch_dsl import connections
 import pytest
-from urllib3.exceptions import RequestError
 
 from bin import cli
 from esprov import CODE_STAGE_NAMESPACE_PREFIX, HOST, NAMESPACE_DELIMITER, PORT
@@ -335,14 +333,8 @@ def upload_records(client, records_by_index,
 
         for record in records:
             # Create and store document for current record.
-            # DEBUG
-            try:
-                ProvdaRecord(**record).save(index=index_name, validate=False)
-            except ElasticsearchException as e:
-                print("index_name: {}".format(index_name))
-                print("record: {}".format(record))
-                print("dir(client): {}".format("\n".join(dir(client))))
-                raise e
+            ProvdaRecord(**record).save(index=index_name, validate=False)
+
 
 
 def parse_records_text(record_texts):
@@ -352,21 +344,20 @@ def parse_records_text(record_texts):
     :param iterable(str) record_texts: collection of records text
     :return iterable(dict): collection of mappings parsed from text
     """
-    records = []
-    for record_text in record_texts:
-        # DEBUG
-        try:
-            record = json.loads(record_text)
-        except ValueError as e:
-            print "RECORD TEXTS: {}".format(record_texts)
-            print "RECORD TEXT: {}".format(record_text)
-            raise e
-        records.append(record)
-    return records
+    return [json.loads(record_text) for record_text in record_texts]
+
 
 
 def _subprocessify(command_text):
+    """
+    Convert command-line command text into form for subprocess call.
+
+    :param command_text: command-line text command
+    :return list[str]: command text ready to be used
+        as argument for subprocess call
+    """
     return command_text.split(" ")
+
 
 
 def _trim_prefix(prefix):
