@@ -151,13 +151,12 @@ class CLIFactory(object):
     subparsers = (
         _Subparser(
                 fetch,
-                argument_names=(BASE_ARGS + ("doctype", ))
+                argument_names=BASE_ARGS + ("doctype", )
         ),
         _Subparser(
                 list_stages,
-                argument_names=(("duplicate", "id") +
-                                BASE_ARGS +
-                                LIST_STAGES_TIMESPANS)
+                argument_names=
+                ("duplicate", "id") + BASE_ARGS + LIST_STAGES_TIMESPANS
         ),
         _Subparser(
                 index,
@@ -197,7 +196,7 @@ class CLIFactory(object):
                     # K-V pairs seems to be invalid (e.g., action="store_true"
                     # with type=<anything>, even with <anything>=None.)
                     field: getattr(argument, field)
-                    for field in argument._fields
+                    for field in Argument._fields
                     if field != 'flags' and getattr(argument, field)
                 }
 

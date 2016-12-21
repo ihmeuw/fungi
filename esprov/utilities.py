@@ -13,6 +13,8 @@ __email__ = "vr24@uw.edu"
 __modname__ = "esprov.esprov.utilities"
 
 
+INVALID_ITEMS_LIMIT_EXCEPTION = ValueError
+
 
 def build_search(es_client, args):
     """
@@ -43,11 +45,18 @@ def capped(items, limit):
     :return gene:
     :raises ValueError: if given limit is non-numeric or less than 1
     """
+
     items = iter(items)
+
     if limit is None:
+        logging.debug("No/null items limit specified; yielding all items...")
         return items
-    elif not isinstance(limit, (int, float)):
-        raise ValueError("Illegal items limit: {} ({})".format(limit,
-                                                               type(limit)))
+
+    limit = int(limit)
+
+    if limit < 1:
+        raise INVALID_ITEMS_LIMIT_EXCEPTION("Need positive items limit; "
+                                            "got {}".format(limit))
     else:
+        logging.debug("Yielding %d items", limit)
         return itertools.islice(items, limit)

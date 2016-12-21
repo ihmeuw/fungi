@@ -218,11 +218,8 @@ def fetch(es_client, args):
         logger.debug("Executing 'match_all' query")
         result = search
 
-    # DEBUG
-    logger.debug("Yielding %s (%s) query results...", args.num_docs, type(args.num_docs))
     for hit in capped(items=result.scan(), limit=args.num_docs):
         yield hit.to_dict()
-
 
 
 

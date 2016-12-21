@@ -8,6 +8,7 @@ from bin import cli
 from .conftest import call_cli_func, make_index_name, upload_records
 from .data import *
 from esprov import functions, DOCTYPE_KEY, DOCUMENT_TYPENAMES
+from esprov.utilities import INVALID_ITEMS_LIMIT_EXCEPTION
 
 
 __author__ = "Vince Reuter"
@@ -101,7 +102,8 @@ class TestBasicFetch:
         # This is analogous to invalid test cases for text arguments.
         # Here, though, we get an empty result rather than an exception.
         command = "fetch --num_docs {}".format(num_docs)
-        assert [] == list(call_cli_func(command, client=es_client))
+        with pytest.raises(INVALID_ITEMS_LIMIT_EXCEPTION):
+            list(call_cli_func(command, client=es_client))
 
 
     def test_just_index(self, es_client):
@@ -142,6 +144,7 @@ class TestBasicFetch:
         assert index1_records == results_first_after_both_indices
 
 
+    @pytest.mark.skip("Limit verbosity during debugging")
     @pytest.mark.parametrize(argnames="known_doctype",
                              argvalues=DOCUMENT_TYPENAMES)
     def test_doctype(self, known_doctype, es_client):
@@ -157,7 +160,8 @@ class TestBasicFetch:
         # Fail the test if there's even a single violator.
         assert len(violators) == 0, \
                 "{} result(s) don't match expected doctype {}: {}".\
-                format(len(violators), known_doctype, "\n".join(violators))
+                format(len(violators), known_doctype,
+                       "\n".join([str(violator) for violator in violators]))
         # No violators --> test passes.
 
 
