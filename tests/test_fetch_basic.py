@@ -92,7 +92,7 @@ class TestBasicFetch:
         # Manually set target option to invalid argument within args namespace.
         option, argument = option_and_argument
         setattr(args, option, argument)
-        with pytest.raises(ValueError):
+        with pytest.raises(Exception):
             list(functions.fetch(es_client, args))
 
 
