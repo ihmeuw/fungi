@@ -122,9 +122,17 @@ class TestBasicFetch:
                        index_name=index1_name)
         # Get results and compare to expectation.
         command = command_template.format(index1_name)
+
         results_after_one_index = list(call_cli_func(command,
                                                      client=es_client))
-        assert index1_records == results_after_one_index
+        # DEBUG
+        try:
+            assert index1_records == results_after_one_index
+        except AssertionError as e:
+            print "COMMAND: {}".format(command)
+            print "EXPECTED RECORD COUNT: {}".format(len(index1_records))
+            print "OBSERVED RECORD COUNT: {}".format(len(results_after_one_index))
+            raise e
 
         # Create second index and insert code-specific logs.
         index2_suffix = "index2"

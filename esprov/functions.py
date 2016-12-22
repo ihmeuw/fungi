@@ -216,7 +216,8 @@ def fetch(es_client, args):
         result = search.query("match", **query_mapping)
     else:
         logger.debug("Executing 'match_all' query")
-        result = search
+        logger.debug("Query mapping: %s", str(search.to_dict()))
+        result = search.query("match", index="_all")
 
     for hit in capped(items=result.scan(), limit=args.num_docs):
         yield hit.to_dict()
