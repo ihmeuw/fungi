@@ -327,7 +327,7 @@ def upload_records(client, records_by_index,
         # Use default Index name.
         records_by_index = {index_name: records_by_index}
 
-    logging.info("Uploading records to index %s", index_name)
+    logging.info("Uploading records to index '%s'", index_name)
 
     for index_name, records in records_by_index.items():
         # Establish the provda record mapping for current index within client.
@@ -335,7 +335,14 @@ def upload_records(client, records_by_index,
 
         for record in records:
             # Create and store document for current record.
-            ProvdaRecord(**record).save(index=index_name, validate=False)
+            success = ProvdaRecord(**record).save(index=index_name,
+                                                  validate=False)
+            logging.debug(
+                    "%s -- %s uploaded: %s",
+                    "SUCCESS" if success else "FAILURE",
+                    "was" if success else "not",
+                    str(record)
+            )
 
 
 

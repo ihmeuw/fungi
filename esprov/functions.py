@@ -174,7 +174,7 @@ def fetch(es_client, args):
     :param argparse.Namespace args: arguments parsed from command line
     :return elasticsearch_dsl.search.Search: ES client Search instance
     :raises ValueError: if doctype given is unknown, or if document count
-        limit is negative
+        limit is negative, or if given index name matches no known index
     """
 
     funcpath = "{}.{}".format(__modname__, "fetch")
@@ -193,6 +193,12 @@ def fetch(es_client, args):
     # TODO: properly construct Search instance.
 
     search = build_search(es_client, args=args)
+
+    # Ensure that we're given a valid index.
+    if args.index not in es_client.indices.get_alias() \
+            and args.index != "_all":
+        raise ValueError("Unknown index: {} ({})".format(args.index,
+                                                         type(args.index)))
 
     # Assign the query mapping (bind doctype to match as needed.)
     if args.doctype is None:
@@ -215,9 +221,14 @@ def fetch(es_client, args):
         logger.debug("query_mapping: %s", str(query_mapping))
         result = search.query("match", **query_mapping)
     else:
-        logger.debug("Executing 'match_all' query")
-        logger.debug("Query mapping: %s", str(search.to_dict()))
-        result = search.query("match", index="_all")
+        logger.debug("Executing 'wildcard' query on %s field", DOCTYPE_KEY)
+        result = search.query("wildcard", **{DOCTYPE_KEY: "*"})
+        # DEBUG
+        try:
+            print "RESULT MAPPING: {}".format(result.to_dict())
+            print "list(result.scan()): {}".format(list(result.scan()))
+        except Exception:
+            print "NO RESULT to_dict() for type {}".format(type(result))
 
     for hit in capped(items=result.scan(), limit=args.num_docs):
         yield hit.to_dict()
