@@ -34,6 +34,7 @@ ES_CLIENT = elasticsearch.Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
 ES_URL_BASE = "http://{h}:{p}".format(h=HOST, p=PORT)
 TEST_CLIENT_NAME = "test_es_client"
 connections.connections.add_connection(TEST_CLIENT_NAME, ES_CLIENT)
+connections.connections.add_connection("default", ES_CLIENT)
 
 
 LOGGER = logging.getLogger(__modname__)

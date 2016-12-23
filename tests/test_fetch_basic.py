@@ -5,7 +5,9 @@ import itertools
 import pytest
 
 from bin import cli
-from .conftest import call_cli_func, make_index_name, upload_records
+from .conftest import \
+    call_cli_func, make_index_name, \
+    upload_records, TEST_CLIENT_NAME
 from .data import *
 from esprov import functions, DOCTYPE_KEY, DOCUMENT_TYPENAMES
 from esprov.utilities import IllegalItemsLimitException
@@ -134,7 +136,7 @@ class TestBasicFetch:
         index1_name = make_index_name(index1_suffix)
         index1_records = ACTIVITY_LOGS
         # Insert the activity-entity-only collection of log records.
-        upload_records(client=es_client,
+        upload_records(client=TEST_CLIENT_NAME,
                        records_by_index=index1_records,
                        index_name=index1_name)
         # Get results and compare to expectation.

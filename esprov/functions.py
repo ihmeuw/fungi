@@ -3,7 +3,7 @@
 import argparse
 import logging
 
-from elasticsearch_dsl import Index
+from elasticsearch_dsl import Index, query, Search
 
 from esprov import \
     DOCTYPE_KEY, DOCUMENT_TYPENAMES, \
@@ -171,8 +171,10 @@ def fetch(es_client, args):
 
     :param elasticsearch.Elasticsearch es_client: Elasticsearch client
         to use for query
-    :param argparse.Namespace args: arguments parsed from command line
-    :return elasticsearch_dsl.search.Search: ES client Search instance
+    :param argparse.Namespace args: binding between option name
+        and argument value
+    :return generator(dict): documents matching the fetch request,
+        with each document converted from raw text form to data mapping
     :raises ValueError: if doctype given is unknown, or if document count
         limit is negative, or if given index name matches no known index
     """
@@ -210,10 +212,12 @@ def fetch(es_client, args):
     # Ensure that we're given a valid index.
     if args.index not in es_client.indices.get_alias() \
             and args.index != "_all":
+        # "_all" is the fallback match-all index value.
+        # That default applies when no index is given, so
+        # by the time index argument is here, it should be set to
+        # either the fallback/catch-all value or to a known index.
         raise ValueError("Unknown index: {} ({})".format(args.index,
                                                          type(args.index)))
-
-
 
     # TODO: Properly filter result; are hits ordered by score?
     # TODO: empty query is logical here, but is it valid?
@@ -222,24 +226,29 @@ def fetch(es_client, args):
     if query_mapping:
         logger.debug("query_mapping: %s", str(query_mapping))
         result = search.query("match", **query_mapping)
+        hits = result.scan()
     else:
-        logger.debug("Executing 'wildcard' query on %s field", DOCTYPE_KEY)
-        result = search.query("wildcard", **{DOCTYPE_KEY: "*"})
-        # DEBUG
-        try:
-            print "RESULT MAPPING: {}".format(result.to_dict())
-            print "list(result.scan()): {}".format(list(result.scan()))
-        except Exception:
-            print "NO RESULT to_dict() for type {}".format(type(result))
+        #logger.debug("Executing 'wildcard' query on %s field", DOCTYPE_KEY)
+        #result = search.query("wildcard", **{DOCTYPE_KEY: "*"})
+        logger.debug("No query mapping --> doing direct search...")
+        hits = Search()
+        #result = Search(index=args.index, using=es_client, query={"match_all": {}})
+        #hits = result["hits"]["hits"]
+        logger.debug("Client indices: %s",
+                     ", ".join(es_client.indices.get_alias().keys()))
+        logger.debug("Searching index %s", args.index)
+        logger.debug(
+                "%s %s in %s",
+                args.index,
+                "is" if args.index
+                     in es_client.indices.get_alias().keys() else "not",
+                ", ".join(es_client.indices.get_alias().keys())
+        )
+        #logger.debug("Result: %s (%s)", str(result), type(result))
+        logger.debug("hits: %s (%s)", str(hits), type(hits))
 
-    for hit in capped(items=result.scan(), limit=args.num_docs):
+    for hit in capped(items=hits, limit=args.num_docs):
         yield hit.to_dict()
-
-
-
-def _build_fetch_query(args):
-    argnames = ["doctype", "index"]
-
 
 
 
