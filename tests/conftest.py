@@ -22,9 +22,6 @@ __email__ = "vr24@uw.edu"
 __modname__ = "esprov.tests.conftest"
 
 
-connections.connections.configure(default={"host": HOST, "port": PORT})
-
-
 CLI_FORMAT_NAME = "cli"
 RAW_FORMAT_NAME = "raw"
 OUTPUT_FORMAT_NAMES = [CLI_FORMAT_NAME, RAW_FORMAT_NAME]
@@ -35,6 +32,9 @@ DEFAULT_TEST_INDEX_NAME = "{}-simpletest".format(TEST_INDEX_PREFIX)
 
 ES_CLIENT = elasticsearch.Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
 ES_URL_BASE = "http://{h}:{p}".format(h=HOST, p=PORT)
+TEST_CLIENT_NAME = "test_es_client"
+connections.connections.add_connection(TEST_CLIENT_NAME, ES_CLIENT)
+
 
 LOGGER = logging.getLogger(__modname__)
 

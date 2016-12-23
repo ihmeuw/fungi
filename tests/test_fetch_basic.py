@@ -123,7 +123,6 @@ class TestBasicFetch:
             list(call_cli_func(command, client=es_client))
 
 
-    @pytest.mark.skip("TODO: this is the first case to unskip")
     def test_just_index(self, es_client):
         """ With specific index, only docs from it are returned. """
         # TODO: partition records by index

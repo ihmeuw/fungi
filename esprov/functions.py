@@ -194,12 +194,6 @@ def fetch(es_client, args):
 
     search = build_search(es_client, args=args)
 
-    # Ensure that we're given a valid index.
-    if args.index not in es_client.indices.get_alias() \
-            and args.index != "_all":
-        raise ValueError("Unknown index: {} ({})".format(args.index,
-                                                         type(args.index)))
-
     # Assign the query mapping (bind doctype to match as needed.)
     if args.doctype is None:
         # No doctype --> grab all records/documents.
@@ -212,6 +206,14 @@ def fetch(es_client, args):
         # Doctype is given and is valid.
         logger.debug("Doctype: %s", args.doctype)
         query_mapping = {DOCTYPE_KEY: args.doctype}
+
+    # Ensure that we're given a valid index.
+    if args.index not in es_client.indices.get_alias() \
+            and args.index != "_all":
+        raise ValueError("Unknown index: {} ({})".format(args.index,
+                                                         type(args.index)))
+
+
 
     # TODO: Properly filter result; are hits ordered by score?
     # TODO: empty query is logical here, but is it valid?
@@ -232,6 +234,12 @@ def fetch(es_client, args):
 
     for hit in capped(items=result.scan(), limit=args.num_docs):
         yield hit.to_dict()
+
+
+
+def _build_fetch_query(args):
+    argnames = ["doctype", "index"]
+
 
 
 
