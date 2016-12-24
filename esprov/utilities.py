@@ -16,6 +16,25 @@ __modname__ = "esprov.esprov.utilities"
 ITEMS_COUNT_LOWER_BOUND = 0
 
 
+
+def parse_index(args):
+    """
+    This pattern is likely to be sufficiently ubiquitous to
+    warrant a function to save redundancy.
+
+    :param argparse.Namespace args: binding between option name and
+        argument value
+    :return str: text version of name(s) of index(es) to which
+        to confine Elasticsearch query/operation
+    """
+    try:
+        index = args.index
+    except AttributeError:
+        index = "_all"
+    return index
+
+
+
 def build_search(es_client, args):
     """
     Build a search instance to execute for a CLI query.
@@ -25,10 +44,7 @@ def build_search(es_client, args):
     :param argparse.Namespace args:
     :return elasticsearch_dsl.search.Search: search instance to execute
     """
-    try:
-        index = args.index
-    except AttributeError:
-        index = "_all"
+    index = parse_index(args)
     search = Search(using=es_client, index=index)
     logging.debug("Search: {}".format(search.to_dict()))
     return search
@@ -59,6 +75,7 @@ def capped(items, limit):
     else:
         logging.debug("Yielding %d items", limit)
         return itertools.islice(items, limit)
+
 
 
 class IllegalItemsLimitException(Exception):

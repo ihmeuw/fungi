@@ -1,6 +1,7 @@
 """ Tests for the basic record-fetching functionality """
 
 import itertools
+import logging
 
 import pytest
 
@@ -135,23 +136,29 @@ class TestBasicFetch:
         index1_suffix = "index1"
         index1_name = make_index_name(index1_suffix)
         index1_records = ACTIVITY_LOGS
+
         # Insert the activity-entity-only collection of log records.
-        upload_records(client=TEST_CLIENT_NAME,
+        logging.info("Uploading records to index '%s'", index1_name)
+        upload_records(client=es_client,
                        records_by_index=index1_records,
                        index_name=index1_name)
+
         # Get results and compare to expectation.
         command = command_template.format(index1_name)
-
-        results_after_one_index = list(call_cli_func(command,
-                                                     client=es_client))
+        results_after_one_index = \
+                list(call_cli_func(command, client=es_client))
         # DEBUG
         try:
             assert index1_records == results_after_one_index
         except AssertionError as e:
-            print "COMMAND: {}".format(command)
-            print "EXPECTED RECORD COUNT: {}".format(len(index1_records))
-            print "OBSERVED RECORD COUNT: {}".format(len(results_after_one_index))
-            print "INDICES: {}".format(es_client.indices.get_alias())
+            print("COMMAND: {}".
+                  format(command))
+            print("EXPECTED RECORD COUNT: {}".
+                  format(len(index1_records)))
+            print("OBSERVED RECORD COUNT: {}".
+                  format(len(results_after_one_index)))
+            print("INDICES: {}".
+                  format(es_client.indices.get_alias()))
             raise e
 
         # Create second index and insert code-specific logs.

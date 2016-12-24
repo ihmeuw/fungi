@@ -328,8 +328,6 @@ def upload_records(client, records_by_index,
         # Use default Index name.
         records_by_index = {index_name: records_by_index}
 
-    logging.info("Uploading records to index '%s'", index_name)
-
     for index_name, records in records_by_index.items():
         # Establish the provda record mapping for current index within client.
         ProvdaRecord.init(index=index_name)

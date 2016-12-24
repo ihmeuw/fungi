@@ -3,13 +3,13 @@
 import argparse
 import logging
 
-from elasticsearch_dsl import Index, query, Search
+from elasticsearch_dsl import Index, Search
 
 from esprov import \
     DOCTYPE_KEY, DOCUMENT_TYPENAMES, \
     ID_ATTRIBUTE_NAME, TIMESTAMP_KEY
 from esprov.provda_record import ProvdaRecord
-from esprov.utilities import build_search, capped
+from esprov.utilities import build_search, capped, parse_index
 
 __author__ = "Vince Reuter"
 __modified__ = "2016-11-21"
@@ -231,7 +231,7 @@ def fetch(es_client, args):
         #logger.debug("Executing 'wildcard' query on %s field", DOCTYPE_KEY)
         #result = search.query("wildcard", **{DOCTYPE_KEY: "*"})
         logger.debug("No query mapping --> doing direct search...")
-        hits = Search()
+        hits = Search(index=parse_index(args))
         #result = Search(index=args.index, using=es_client, query={"match_all": {}})
         #hits = result["hits"]["hits"]
         logger.debug("Client indices: %s",
