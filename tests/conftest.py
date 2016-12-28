@@ -147,6 +147,8 @@ def call_cli_func(command, client=ES_CLIENT):
         for Index existence check
     """
     args = cli.CLIFactory.get_parser().parse_args(command.split(" "))
+    logging.debug("Making CLI function call based on parsed arguments %s",
+                  str(args))
     return args.func(client, args)
 
 
@@ -337,10 +339,10 @@ def upload_records(client, records_by_index,
             success = ProvdaRecord(**record).save(index=index_name,
                                                   validate=False)
             logging.debug(
-                    "%s -- %s uploaded: %s",
+                    "%s -- %s uploaded to index %s: %s",
                     "SUCCESS" if success else "FAILURE",
-                    "was" if success else "not",
-                    str(record)
+                    "WAS" if success else "NOT",
+                    index_name, str(record)
             )
 
 

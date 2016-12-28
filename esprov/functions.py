@@ -231,7 +231,11 @@ def fetch(es_client, args):
         #logger.debug("Executing 'wildcard' query on %s field", DOCTYPE_KEY)
         #result = search.query("wildcard", **{DOCTYPE_KEY: "*"})
         logger.debug("No query mapping --> doing direct search...")
-        hits = Search(index=parse_index(args))
+        resolved_index = parse_index(args)
+        logger.debug("Parsed index name %s from %s", resolved_index, str(args))
+        # TODO: uncomment
+        #hits = Search(index=resolved_index)
+        hits = Search()
         #result = Search(index=args.index, using=es_client, query={"match_all": {}})
         #hits = result["hits"]["hits"]
         logger.debug("Client indices: %s",
@@ -240,8 +244,8 @@ def fetch(es_client, args):
         logger.debug(
                 "%s %s in %s",
                 args.index,
-                "is" if args.index
-                     in es_client.indices.get_alias().keys() else "not",
+                "IS" if args.index
+                     in es_client.indices.get_alias().keys() else "NOT",
                 ", ".join(es_client.indices.get_alias().keys())
         )
         #logger.debug("Result: %s (%s)", str(result), type(result))

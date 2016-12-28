@@ -1,14 +1,13 @@
 """ Tests for the basic record-fetching functionality """
 
+import copy
 import itertools
 import logging
 
 import pytest
 
 from bin import cli
-from .conftest import \
-    call_cli_func, make_index_name, \
-    upload_records, TEST_CLIENT_NAME
+from .conftest import call_cli_func, make_index_name, upload_records
 from .data import *
 from esprov import functions, DOCTYPE_KEY, DOCUMENT_TYPENAMES
 from esprov.utilities import IllegalItemsLimitException
@@ -61,6 +60,7 @@ class TestBasicFetch:
     ALL_OPTIONS = TEXTUAL_OPTIONS + NUMERIC_OPTIONS
 
 
+    @pytest.mark.skip("Isolate index name test")
     @pytest.mark.parametrize(argnames="option_name", argvalues=ALL_OPTIONS)
     def test_doctype_as_flag_not_option(self, option_name, es_client):
         """ Argument-expecting option as flag --> parse error --> sys exit. """
@@ -70,6 +70,7 @@ class TestBasicFetch:
             call_cli_func(command, client=es_client)
 
 
+    @pytest.mark.skip("Isolate index name test")
     @pytest.mark.parametrize(
             argnames="option,argument",
             argvalues=[("index", "unknown_index"),
@@ -83,6 +84,7 @@ class TestBasicFetch:
             list(call_cli_func(command, client=es_client))
 
 
+    @pytest.mark.skip("Isolate index name test")
     @pytest.mark.parametrize(
             argnames="option_and_argument",
             argvalues=itertools.product(["doctype", "num_docs"],
@@ -101,6 +103,7 @@ class TestBasicFetch:
             list(functions.fetch(es_client, args))
 
 
+    @pytest.mark.skip("Isolate index name test")
     @pytest.mark.parametrize(
             argnames="index_argument",
             argvalues=["", " ", "  "]
@@ -116,6 +119,7 @@ class TestBasicFetch:
             list(functions.fetch(es_client, args))
 
 
+    @pytest.mark.skip("Isolate index name test")
     @pytest.mark.parametrize(argnames="num_docs", argvalues=[-5, -1, 0])
     def test_num_docs_corner(self, num_docs, es_client):
         """ Negative count is questionable; let's allow & return empty. """
@@ -135,7 +139,7 @@ class TestBasicFetch:
         # Create an initial index.
         index1_suffix = "index1"
         index1_name = make_index_name(index1_suffix)
-        index1_records = ACTIVITY_LOGS
+        index1_records = ACTIVITY_LOGS[:2]
 
         # Insert the activity-entity-only collection of log records.
         logging.info("Uploading records to index '%s'", index1_name)
@@ -159,11 +163,15 @@ class TestBasicFetch:
                   format(len(results_after_one_index)))
             print("INDICES: {}".
                   format(es_client.indices.get_alias()))
+            discrepancies = self.discrepancies(
+                expected=index1_records, observed=results_after_one_index
+            )
+            
             raise e
 
         # Create second index and insert code-specific logs.
         index2_suffix = "index2"
-        index2_records = CODE_LOGS
+        index2_records = CODE_LOGS[:2]
         index2_name = make_index_name(index2_suffix)
         upload_records(client=es_client,
                        records_by_index=index2_records,
@@ -233,3 +241,23 @@ class TestBasicFetch:
         """ Ensure that doctype and docs count can be used in tandem. """
         command = "fetch --doctype {} --num_docs {}".format(doctype,
                                                             num_docs)
+
+
+    @staticmethod
+    def discrepancies(expected, observed):
+        expected_clone = copy.deepcopy(expected)
+        observed_clone = copy.deepcopy(observed)
+        expected_indices_unused = []
+        observed_indices_used = []
+        for i, e in enumerate(expected_clone):
+            for j, o in enumerate(observed_clone):
+                if e == o:
+                    observed_indices_used.append(j)
+                    break
+            else:
+                expected_indices_unused.append(i)
+        unmatched_expectations = [expected_clone[i]
+                                  for i in expected_indices_unused]
+        unused_observations = [o for j, o in enumerate(observed_clone)
+                               if j not in set(observed_indices_used)]
+        return unmatched_expectations, unused_observations
