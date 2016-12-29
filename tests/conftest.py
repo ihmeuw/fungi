@@ -336,7 +336,8 @@ def upload_records(client, records_by_index,
 
         for record in records:
             # Create and store document for current record.
-            success = ProvdaRecord(**record).save(index=index_name,
+            success = ProvdaRecord(**record).save(using=client,
+                                                  index=index_name,
                                                   validate=False)
             logging.debug(
                     "%s -- %s uploaded to index %s: %s",

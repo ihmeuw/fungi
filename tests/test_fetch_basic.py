@@ -3,7 +3,9 @@
 import copy
 import itertools
 import logging
+import subprocess
 
+from elasticsearch_dsl import Search
 import pytest
 
 from bin import cli
@@ -139,22 +141,42 @@ class TestBasicFetch:
         # Create an initial index.
         index1_suffix = "index1"
         index1_name = make_index_name(index1_suffix)
-        index1_records = ACTIVITY_LOGS[:2]
+        command = command_template.format(index1_name)
 
+        # Immediate assertion to ensure target test index doesn't exist.
+        with pytest.raises(ValueError):
+            list(call_cli_func(command, client=es_client))
+
+        index1_records = ACTIVITY_LOGS[:2]
         # Insert the activity-entity-only collection of log records.
-        logging.info("Uploading records to index '%s'", index1_name)
+        logging.info("Uploading %d records to index '%s'",
+                     len(index1_records), index1_name)
         upload_records(client=es_client,
                        records_by_index=index1_records,
                        index_name=index1_name)
 
+        # Mostly DEBUG, but some additional ordinary validation, too.
+        try:
+            assert len(index1_records) == sum(1 for _ in Search(index=index1_name))
+        except AssertionError:
+            debugging_command = \
+                "curl -XGET 'localhost:9200/_search?pretty' -d'{\"query\": {\"match_all\": {}}}'"
+            with open("debugging.txt", "w") as f:
+                subprocess.check_call(
+                    debugging_command.split(" "), stdout=f, stderr=f)
+            raise
+
         # Get results and compare to expectation.
-        command = command_template.format(index1_name)
         results_after_one_index = \
                 list(call_cli_func(command, client=es_client))
+        unmatched_expectations, unused_observations = self.discrepancies(
+            expected=index1_records, observed=results_after_one_index
+        )
         # DEBUG
         try:
-            assert index1_records == results_after_one_index
-        except AssertionError as e:
+            assert [] == unmatched_expectations
+            assert [] == results_after_one_index
+        except AssertionError:
             print("COMMAND: {}".
                   format(command))
             print("EXPECTED RECORD COUNT: {}".
@@ -163,11 +185,15 @@ class TestBasicFetch:
                   format(len(results_after_one_index)))
             print("INDICES: {}".
                   format(es_client.indices.get_alias()))
-            discrepancies = self.discrepancies(
-                expected=index1_records, observed=results_after_one_index
+            print("{} UNMATCHED EXPECTATIONS:\n{}".format(
+                len(unmatched_expectations),
+                "\n".join([str(e) for e in unmatched_expectations]))
             )
-            
-            raise e
+            print("{} UNUSED OBSERVATIONS:\n{}".format(
+                len(unused_observations),
+                "\n".join([str(o) for o in unused_observations]))
+            )
+            raise
 
         # Create second index and insert code-specific logs.
         index2_suffix = "index2"
@@ -212,9 +238,10 @@ class TestBasicFetch:
     @pytest.mark.parametrize(
             argnames="count_and_records",
             argvalues=zip(
-                    [1, 2, 3, 4],
+                    [1, 2, 3, 4, 15],
                     [ACTIVITY_LOGS, CODE_LOGS,
-                     DOC_LOGS, NON_ENTITY_NON_ACTIVITY_LOGS]
+                     DOC_LOGS, NON_ENTITY_NON_ACTIVITY_LOGS,
+                     ACTIVITY_LOGS + CODE_LOGS]
             )
     )
     def test_num_docs(self, count_and_records, es_client):

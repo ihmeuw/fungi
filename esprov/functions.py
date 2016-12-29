@@ -233,22 +233,26 @@ def fetch(es_client, args):
         logger.debug("No query mapping --> doing direct search...")
         resolved_index = parse_index(args)
         logger.debug("Parsed index name %s from %s", resolved_index, str(args))
+
+        # DEBUG
+        #logger.debug("USING EMPTY SEARCH FOR DEBUGGING")
+        #hits = Search()
+
         # TODO: uncomment
-        #hits = Search(index=resolved_index)
-        hits = Search()
-        #result = Search(index=args.index, using=es_client, query={"match_all": {}})
-        #hits = result["hits"]["hits"]
-        logger.debug("Client indices: %s",
-                     ", ".join(es_client.indices.get_alias().keys()))
-        logger.debug("Searching index %s", args.index)
+        logger.debug("Searching index '%s'", resolved_index)
+        #logger.debug("Client indices: %s", ", ".join(es_client.indices.get_alias().keys()))
+        """
         logger.debug(
-                "%s %s in %s",
-                args.index,
-                "IS" if args.index
-                     in es_client.indices.get_alias().keys() else "NOT",
-                ", ".join(es_client.indices.get_alias().keys())
+            "%s %s in %s",
+            args.index,
+            "IS" if args.index
+                    in es_client.indices.get_alias().keys() else "NOT",
+            ", ".join(es_client.indices.get_alias().keys())
         )
-        #logger.debug("Result: %s (%s)", str(result), type(result))
+        """
+        hits = Search(index=resolved_index)
+        #hits = result["hits"]["hits"]
+
         logger.debug("hits: %s (%s)", str(hits), type(hits))
 
     for hit in capped(items=hits, limit=args.num_docs):
