@@ -390,12 +390,33 @@ def are_equal(record_1, record_2, irrelevant_fields=None):
     for i, key in enumerate(r1_keys):
         logging.debug("Working with key %d/%d, '%s'",
                       (i + 1), len(r1_keys), key)
-        if record_1[key] != record_2[key]:
+        if record_1[key] != record_2[key] and \
+                (_filter_record_value(record_1[key]) != record_2[key]):
             logging.debug("For key '%s', r1 value %s\n!= r2 value\n%s",
                           str(key), str(record_1[key]), str(record_2[key]))
             return False
 
     return True
+
+
+
+def _filter_record_value(value):
+    """
+    Highly specialized method for filtering empty values from with values
+    collection within a provenance record. This is a helper function for
+    circumventing a comparison inequality issue. A query result that matches
+    a record seems to omit element(s) with empty value container. For example,
+    {'a': {}, 'b': 'c'} -> {'b': 'c'}
+
+    :param object value: (ideally) dictionary from which to filter entries
+        in which the value is an empty container
+    :return object: filtered mapping if given a dictionary, otherwise the
+        original value, unmodified
+    """
+    try:
+        return {k: v for k, v in value.items() if v}
+    except AttributeError:
+        return value
 
 
 
