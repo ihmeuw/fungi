@@ -387,7 +387,9 @@ def are_equal(record_1, record_2, irrelevant_fields=None):
     if r1_keys != r2_keys:
         return False
 
-    for key in r1_keys:
+    for i, key in enumerate(r1_keys):
+        logging.debug("Working with key %d/%d, '%s'",
+                      (i + 1), len(r1_keys), key)
         if record_1[key] != record_2[key]:
             logging.debug("For key '%s', r1 value %s\n!= r2 value\n%s",
                           str(key), str(record_1[key]), str(record_2[key]))

@@ -194,18 +194,16 @@ class TestBasicFetch:
             print("INDICES: {}".
                   format(es_client.indices.get_alias()))
             print("{} UNMATCHED EXPECTATIONS:\n{}".format(
-                len(unmatched_expectations),
-                "\n".join([str(e) for e in unmatched_expectations]))
-            )
+                  len(unmatched_expectations),
+                  "\n".join([str(e) for e in unmatched_expectations])))
             print("{} UNUSED OBSERVATIONS:\n{}".format(
-                len(unused_observations),
-                "\n".join([str(o) for o in unused_observations]))
-            )
+                  len(unused_observations),
+                  "\n".join([str(o) for o in unused_observations])))
             raise
 
         # Create second index and insert code-specific logs.
         index2_suffix = "index2"
-        index2_records = CODE_LOGS[:2]
+        index2_records = DOC_LOGS[:2]
         index2_name = make_index_name(index2_suffix)
         upload_records(client=es_client,
                        records_by_index=index2_records,
@@ -220,8 +218,26 @@ class TestBasicFetch:
             observed=result_second_after_both_indices,
             equivalence_comparator=equal_sans_time
         )
-        assert [] == unmatched_expectations
-        assert [] == unused_observations
+        # DEBUG
+        try:
+            assert [] == unmatched_expectations
+            assert [] == unused_observations
+        except AssertionError:
+            print("COMMAND: {}".
+                  format(command))
+            print("EXPECTED RECORD COUNT: {}".
+                  format(len(index2_records)))
+            print("OBSERVED RECORD COUNT: {}".
+                  format(len(result_second_after_both_indices)))
+            print("INDICES: {}".
+                  format(es_client.indices.get_alias()))
+            print("{} UNMATCHED EXPECTATIONS:\n{}".format(
+                  len(unmatched_expectations),
+                  "\n".join([str(e) for e in unmatched_expectations])))
+            print("{} UNUSED OBSERVATIONS:\n{}".format(
+                  len(unused_observations),
+                  "\n".join([str(o) for o in unused_observations])))
+            raise
 
         command = command_template.format(index1_name)
         results_first_after_both_indices = \
@@ -322,10 +338,14 @@ class TestBasicFetch:
         expected_clone = copy.deepcopy(expected)
         observed_clone = copy.deepcopy(observed)
 
+        # For final discrepancies, track the unmatched expectations and
+        # the unused observations. For true match, these are empty at end.
         expected_indices_unused = []
         observed_indices_used = []
 
+        # The primary iteration is over the expected observations.
         for i, e in enumerate(expected_clone):
+            # For each expected observation, seek a match among actuals.
             for j, o in enumerate(observed_clone):
                 if equivalence_comparator(e, o):
                     observed_indices_used.append(j)
