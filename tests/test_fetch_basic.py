@@ -266,7 +266,7 @@ class TestBasicFetch:
         # No violators --> test passes.
 
 
-    @pytest.mark.skip("isolate failing tests")
+    # TODO debug from here -- the high-count (15) test case is problematic.
     @pytest.mark.parametrize(
             argnames="count_and_records",
             argvalues=zip(
