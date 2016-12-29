@@ -1,7 +1,6 @@
 """ Tests for the basic record-fetching functionality """
 
 import copy
-from functools import partial
 import itertools
 import logging
 import operator
@@ -15,7 +14,7 @@ from .conftest import \
     call_cli_func, equal_sans_time, \
     make_index_name, upload_records
 from .data import *
-from esprov import functions, DOCTYPE_KEY, DOCUMENT_TYPENAMES, TIMESTAMP_KEY
+from esprov import functions, DOCTYPE_KEY, DOCUMENT_TYPENAMES
 from esprov.utilities import IllegalItemsLimitException
 
 
@@ -66,7 +65,6 @@ class TestBasicFetch:
     ALL_OPTIONS = TEXTUAL_OPTIONS + NUMERIC_OPTIONS
 
 
-    @pytest.mark.skip("Isolate index name test")
     @pytest.mark.parametrize(argnames="option_name", argvalues=ALL_OPTIONS)
     def test_doctype_as_flag_not_option(self, option_name, es_client):
         """ Argument-expecting option as flag --> parse error --> sys exit. """
