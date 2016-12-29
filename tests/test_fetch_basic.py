@@ -105,7 +105,6 @@ class TestBasicFetch:
             list(functions.fetch(es_client, args))
 
 
-    @pytest.mark.skip("Isolate index name test")
     @pytest.mark.parametrize(
             argnames="index_argument",
             argvalues=["", " ", "  "]
@@ -121,7 +120,6 @@ class TestBasicFetch:
             list(functions.fetch(es_client, args))
 
 
-    @pytest.mark.skip("Isolate index name test")
     @pytest.mark.parametrize(argnames="num_docs", argvalues=[-5, -1, 0])
     def test_num_docs_corner(self, num_docs, es_client):
         """ Negative count is questionable; let's allow & return empty. """
@@ -245,7 +243,6 @@ class TestBasicFetch:
         )
         assert [] == unmatched_expectations
         assert [] == unused_observations
-
 
 
     @pytest.mark.skip("Limit verbosity during debugging")
