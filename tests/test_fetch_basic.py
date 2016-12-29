@@ -74,7 +74,6 @@ class TestBasicFetch:
             call_cli_func(command, client=es_client)
 
 
-    @pytest.mark.skip("Isolate index name test")
     @pytest.mark.parametrize(
             argnames="option,argument",
             argvalues=[("index", "unknown_index"),
@@ -88,7 +87,6 @@ class TestBasicFetch:
             list(call_cli_func(command, client=es_client))
 
 
-    @pytest.mark.skip("Isolate index name test")
     @pytest.mark.parametrize(
             argnames="option_and_argument",
             argvalues=itertools.product(["doctype", "num_docs"],
