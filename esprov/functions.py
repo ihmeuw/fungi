@@ -9,7 +9,7 @@ from esprov import \
     DOCTYPE_KEY, DOCUMENT_TYPENAMES, \
     ID_ATTRIBUTE_NAME, TIMESTAMP_KEY
 from esprov.provda_record import ProvdaRecord
-from esprov.utilities import build_search, capped, parse_index
+from esprov.utilities import build_search, capped, parse_index, parse_num_docs
 
 __author__ = "Vince Reuter"
 __modified__ = "2016-11-21"
@@ -250,7 +250,7 @@ def fetch(es_client, args):
             ", ".join(es_client.indices.get_alias().keys())
         )
         """
-        hits = Search(index=resolved_index)
+        hits = Search(index=resolved_index)[:parse_num_docs(args)]
         #hits = result["hits"]["hits"]
 
         logger.debug("hits: %s (%s)", str(hits), type(hits))

@@ -101,7 +101,7 @@ class TestBasicFetch:
         # Manually set target option to invalid argument within args namespace.
         option, argument = option_and_argument
         setattr(args, option, argument)
-        with pytest.raises(ValueError):
+        with pytest.raises(Exception):
             list(functions.fetch(es_client, args))
 
 
@@ -288,7 +288,11 @@ class TestBasicFetch:
         # Make the assertion once results are obtained from command call.
         command = "fetch --num_docs {}".format(num_docs)
         results = call_cli_func(command, client=es_client)
-        assert num_docs == len(list(results))
+        try:
+            assert num_docs == len(list(results))
+        except AssertionError:
+            print("type(results):{}".format(type(results)))
+            raise
 
 
     @pytest.mark.skip("Unimplemented")

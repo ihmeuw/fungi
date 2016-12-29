@@ -35,6 +35,21 @@ def parse_index(args):
 
 
 
+def parse_num_docs(args):
+    """
+    Parse the cap for the number of hits to return from a document query.
+
+    :param argparse.Namespace args: binding between option name and argument
+    :return int: cap for the number of documents to return that hit on a query
+    """
+    default = 10
+    try:
+        return max(args.num_docs, default)
+    except AttributeError:
+        return default
+
+
+
 def build_search(es_client, args):
     """
     Build a search instance to execute for a CLI query.
@@ -45,7 +60,7 @@ def build_search(es_client, args):
     :return elasticsearch_dsl.search.Search: search instance to execute
     """
     index = parse_index(args)
-    search = Search(using=es_client, index=index)
+    search = Search(using=es_client, index=index)[:parse_num_docs(args)]
     logging.debug("Search: {}".format(search.to_dict()))
     return search
 
