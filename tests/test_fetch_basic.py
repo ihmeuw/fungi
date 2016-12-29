@@ -245,21 +245,20 @@ class TestBasicFetch:
         assert [] == unused_observations
 
 
-    @pytest.mark.skip("Limit verbosity during debugging")
     @pytest.mark.parametrize(argnames="known_doctype",
                              argvalues=DOCUMENT_TYPENAMES)
     def test_doctype(self, known_doctype, es_client):
         """ With specific doctype, only matched docs are returned. """
 
-        command = "fetch --doctype{}".format(" {}".format(known_doctype))
+        command = "fetch --doctype {}".format(known_doctype)
         results = list(call_cli_func(command, client=es_client))
         violators = filter(
-                lambda record: record[DOCTYPE_KEY] == known_doctype,
+                lambda record: record[DOCTYPE_KEY] != known_doctype,
                 results
         )
 
         # Fail the test if there's even a single violator.
-        assert len(violators) == 0, \
+        assert 0== len(violators), \
                 "{} result(s) don't match expected doctype {}: {}".\
                 format(len(violators), known_doctype,
                        "\n".join([str(violator) for violator in violators]))
@@ -295,15 +294,35 @@ class TestBasicFetch:
             raise
 
 
-    @pytest.mark.skip("Unimplemented")
-    @pytest.mark.parametrize(
-        argnames="num_docs,doctype",
-        argvalues=itertools.product([3, 4], DOCUMENT_TYPENAMES)
-    )
-    def test_doctype_and_num_docs(self, num_docs, doctype):
+    @pytest.mark.parametrize(argnames="num_docs", argvalues=[3, 4])
+    def test_doctype_and_num_docs_count(self, num_docs, es_client):
         """ Ensure that doctype and docs count can be used in tandem. """
-        command = "fetch --doctype {} --num_docs {}".format(doctype,
-                                                            num_docs)
+        index_suffix = "doctype-num-docs-test"
+        index = make_index_name(index_suffix)
+        entity_logs = CODE_LOGS + DOC_LOGS
+        activity_logs = ACTIVITY_LOGS
+        doctype = "activity"
+        command = "fetch --doctype {} --num_docs {} --index {}".\
+                  format(doctype, num_docs, index)
+        records_for_upload = entity_logs + activity_logs
+        # Upload all of the records of interest to the same index.
+        upload_records(client=es_client,
+                       records_by_index=records_for_upload, index_name=index)
+        results = list(call_cli_func(command, client=es_client))
+
+        # DEBUG
+        print("len(results)".format({results}))
+
+        _, unmatched_observations = self.discrepancies(
+                expected=records_for_upload, observed=results
+        )
+        assert [] == unmatched_observations
+
+        command = "fetch --doctype entity --num_docs 15"
+        results = list(call_cli_func(command, client=es_client))
+        _, unmatched_observations = self.discrepancies(expected=entity_logs,
+                                                       observed=results)
+        assert [] == unmatched_observations
 
 
     @staticmethod
