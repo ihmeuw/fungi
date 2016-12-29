@@ -1,6 +1,7 @@
 """ General test configuration/setup/constants. """
 
 import abc
+from functools import partial
 import json
 import logging
 import subprocess
@@ -10,7 +11,9 @@ from elasticsearch_dsl import connections
 import pytest
 
 from bin import cli
-from esprov import CODE_STAGE_NAMESPACE_PREFIX, HOST, NAMESPACE_DELIMITER, PORT
+from esprov import \
+    CODE_STAGE_NAMESPACE_PREFIX, HOST, \
+    NAMESPACE_DELIMITER, PORT, TIMESTAMP_KEY
 from esprov.functions import LIST_STAGES_TIMESPANS
 from esprov.provda_record import ProvdaRecord
 
@@ -345,6 +348,52 @@ def upload_records(client, records_by_index,
                     "WAS" if success else "NOT",
                     index_name, str(record)
             )
+    client.indices.refresh(index=index_name)
+
+
+
+def are_equal(record_1, record_2, irrelevant_fields=None):
+    """
+    Determine whether two records are equal. Each record is assumed
+    to be a mapping that represents a provenance record.
+
+    :param collections.abc.Mapping record_1: dictionary-like object
+        that represents a single provenance record
+    :param collections.abc.Mapping record_2: dictionary-like object
+        that represents a single provenance record
+    :param str | collections.abc.Iterable irrelevant_fields: single field name
+        or collection of field names which should be disregarded for the
+        purpose of the comparison; optional, default None
+    :return bool: flag indicating logical equivalence of the two
+        given provenance record proxy mappings
+    """
+
+    if not irrelevant_fields:
+        irrelevant_fields = set()
+    elif isinstance(irrelevant_fields, str):
+        irrelevant_fields = {irrelevant_fields}
+    else:
+        irrelevant_fields = set(irrelevant_fields)
+
+    try:
+        r1_keys = set(record_1.keys()) - irrelevant_fields
+        r2_keys = set(record_2.keys()) - irrelevant_fields
+    except AttributeError:
+        print("record_1: {} ({})".format(record_1, type(record_1)))
+        print("record_2: {} ({})".format(record_2, type(record_2)))
+        raise
+
+    # Do a sort of rough check for schema equivalence between the documents.
+    if r1_keys != r2_keys:
+        return False
+
+    for key in r1_keys:
+        if record_1[key] != record_2[key]:
+            logging.debug("For key '%s', r1 value %s\n!= r2 value\n%s",
+                          str(key), str(record_1[key]), str(record_2[key]))
+            return False
+
+    return True
 
 
 
@@ -373,3 +422,7 @@ def _subprocessify(command_text):
 
 def _trim_prefix(prefix):
     return prefix[:-1] if prefix.endswith('*') else prefix
+
+
+
+equal_sans_time = partial(are_equal, irrelevant_fields=TIMESTAMP_KEY)

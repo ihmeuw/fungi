@@ -1,17 +1,21 @@
 """ Tests for the basic record-fetching functionality """
 
 import copy
+from functools import partial
 import itertools
 import logging
+import operator
 import subprocess
 
 from elasticsearch_dsl import Search
 import pytest
 
 from bin import cli
-from .conftest import call_cli_func, make_index_name, upload_records
+from .conftest import \
+    call_cli_func, equal_sans_time, \
+    make_index_name, upload_records
 from .data import *
-from esprov import functions, DOCTYPE_KEY, DOCUMENT_TYPENAMES
+from esprov import functions, DOCTYPE_KEY, DOCUMENT_TYPENAMES, TIMESTAMP_KEY
 from esprov.utilities import IllegalItemsLimitException
 
 
@@ -157,25 +161,29 @@ class TestBasicFetch:
 
         # Mostly DEBUG, but some additional ordinary validation, too.
         try:
-            assert len(index1_records) == sum(1 for _ in Search(index=index1_name))
+            assert len(index1_records) == \
+                   sum(1 for _ in Search(index=index1_name))
         except AssertionError:
             debugging_command = \
                 "curl -XGET 'localhost:9200/_search?pretty' -d'{\"query\": {\"match_all\": {}}}'"
             with open("debugging.txt", "w") as f:
                 subprocess.check_call(
-                    debugging_command.split(" "), stdout=f, stderr=f)
+                    debugging_command.split(" "), stdout=f, stderr=f
+                )
             raise
 
         # Get results and compare to expectation.
         results_after_one_index = \
                 list(call_cli_func(command, client=es_client))
         unmatched_expectations, unused_observations = self.discrepancies(
-            expected=index1_records, observed=results_after_one_index
+            expected=index1_records,
+            observed=results_after_one_index,
+            equivalence_comparator=equal_sans_time
         )
         # DEBUG
         try:
             assert [] == unmatched_expectations
-            assert [] == results_after_one_index
+            assert [] == unused_observations
         except AssertionError:
             print("COMMAND: {}".
                   format(command))
@@ -202,15 +210,30 @@ class TestBasicFetch:
         upload_records(client=es_client,
                        records_by_index=index2_records,
                        index_name=index2_name)
+
         # Check each set of records is accessible but that they're disjoint.
         command = command_template.format(index2_name)
         result_second_after_both_indices = \
                 list(call_cli_func(command, client=es_client))
-        assert index2_records == result_second_after_both_indices
+        unmatched_expectations, unused_observations = self.discrepancies(
+            expected=index2_records,
+            observed=result_second_after_both_indices,
+            equivalence_comparator=equal_sans_time
+        )
+        assert [] == unmatched_expectations
+        assert [] == unused_observations
+
         command = command_template.format(index1_name)
         results_first_after_both_indices = \
                 list(call_cli_func(command, client=es_client))
-        assert index1_records == results_first_after_both_indices
+        unmatched_expectations, unused_observations = self.discrepancies(
+            expected=index1_records,
+            observed=results_first_after_both_indices,
+            equivalence_comparator=equal_sans_time
+        )
+        assert [] == unmatched_expectations
+        assert [] == unused_observations
+
 
 
     @pytest.mark.skip("Limit verbosity during debugging")
@@ -271,20 +294,50 @@ class TestBasicFetch:
 
 
     @staticmethod
-    def discrepancies(expected, observed):
+    def discrepancies(expected, observed, equivalence_comparator=None):
+        """
+        Determine any discrepancy between expected observations and actual
+        observations, making an attempt to find a match for each expected
+        value in the collection of observed values. Discrepancies
+        (return values) are represented as a pair of lists.
+
+        :param collections.abc.Iterable expected: collection of
+            expected observations
+        :param collections.abc.Iterable observed: collections of
+            actual observations
+        :param (object, object) -> bool equivalence_comparator: function with
+            which to compare two object; optional, default to equality operator
+        :return list, list: pair of lists, the first of which is a
+            collection of expected observations for which no actual
+            observation was a match, and the second of which is a
+            collection of actual observations, each of which was not
+            used as a match for one of the expected observations. If
+            the input collection arguments match and there's a logical
+            equivalence between expectation and observation, each of
+            the returned collections should be empty.
+        """
+
+        equivalence_comparator = equivalence_comparator or operator.eq
+
         expected_clone = copy.deepcopy(expected)
         observed_clone = copy.deepcopy(observed)
+
         expected_indices_unused = []
         observed_indices_used = []
+
         for i, e in enumerate(expected_clone):
             for j, o in enumerate(observed_clone):
-                if e == o:
+                if equivalence_comparator(e, o):
                     observed_indices_used.append(j)
                     break
             else:
+                logging.debug("No match for\n%s\nin\n%s",
+                              e, str(observed_clone))
                 expected_indices_unused.append(i)
+
         unmatched_expectations = [expected_clone[i]
                                   for i in expected_indices_unused]
         unused_observations = [o for j, o in enumerate(observed_clone)
                                if j not in set(observed_indices_used)]
+
         return unmatched_expectations, unused_observations
