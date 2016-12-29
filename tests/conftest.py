@@ -1,15 +1,19 @@
 """ General test configuration/setup/constants. """
 
 import abc
+from functools import partial
 import json
 import logging
 import subprocess
 
 import elasticsearch
+from elasticsearch_dsl import connections
 import pytest
 
 from bin import cli
-from esprov import CODE_STAGE_NAMESPACE_PREFIX, HOST, NAMESPACE_DELIMITER, PORT
+from esprov import \
+    CODE_STAGE_NAMESPACE_PREFIX, HOST, \
+    NAMESPACE_DELIMITER, PORT, TIMESTAMP_KEY
 from esprov.functions import LIST_STAGES_TIMESPANS
 from esprov.provda_record import ProvdaRecord
 
@@ -31,6 +35,10 @@ DEFAULT_TEST_INDEX_NAME = "{}-simpletest".format(TEST_INDEX_PREFIX)
 
 ES_CLIENT = elasticsearch.Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
 ES_URL_BASE = "http://{h}:{p}".format(h=HOST, p=PORT)
+TEST_CLIENT_NAME = "test_es_client"
+connections.connections.add_connection(TEST_CLIENT_NAME, ES_CLIENT)
+connections.connections.add_connection("default", ES_CLIENT)
+
 
 LOGGER = logging.getLogger(__modname__)
 
@@ -40,9 +48,8 @@ LOGGER = logging.getLogger(__modname__)
 def time_lag(request):
     """ Parameterize test case with time lag such that
      there stage(s) is/are in-bounds for a query. """
-    # TODO: implement
+    # TODO: implement this for accuracy tests to test specific function(s).
     return request.param
-
 
 
 
@@ -133,6 +140,8 @@ def es_client(request):
 def call_cli_func(command, client=ES_CLIENT):
     """
     Call a CLI function based on given command and with given ES client.
+    This should ALWAYS MATCH the parse-and-call pattern that's used in the
+    actual esprov executable (bin/esprov).
 
     :param str command: text as would be entered at a command prompt
     :param elasticsearch.client.Elasticsearch client: client to use for ES call
@@ -141,6 +150,8 @@ def call_cli_func(command, client=ES_CLIENT):
         for Index existence check
     """
     args = cli.CLIFactory.get_parser().parse_args(command.split(" "))
+    logging.debug("Making CLI function call based on parsed arguments %s",
+                  str(args))
     return args.func(client, args)
 
 
@@ -324,11 +335,89 @@ def upload_records(client, records_by_index,
 
     for index_name, records in records_by_index.items():
         # Establish the provda record mapping for current index within client.
-        ProvdaRecord.init(index=index_name, using=client)
+        ProvdaRecord.init(index=index_name)
 
         for record in records:
             # Create and store document for current record.
-            ProvdaRecord(index=index_name, using=client, **record).save()
+            success = ProvdaRecord(**record).save(using=client,
+                                                  index=index_name,
+                                                  validate=False)
+            logging.debug(
+                    "%s -- %s uploaded to index %s: %s",
+                    "SUCCESS" if success else "FAILURE",
+                    "WAS" if success else "NOT",
+                    index_name, str(record)
+            )
+    client.indices.refresh(index=index_name)
+
+
+
+def are_equal(record_1, record_2, irrelevant_fields=None):
+    """
+    Determine whether two records are equal. Each record is assumed
+    to be a mapping that represents a provenance record.
+
+    :param collections.abc.Mapping record_1: dictionary-like object
+        that represents a single provenance record
+    :param collections.abc.Mapping record_2: dictionary-like object
+        that represents a single provenance record
+    :param str | collections.abc.Iterable irrelevant_fields: single field name
+        or collection of field names which should be disregarded for the
+        purpose of the comparison; optional, default None
+    :return bool: flag indicating logical equivalence of the two
+        given provenance record proxy mappings
+    """
+
+    if not irrelevant_fields:
+        irrelevant_fields = set()
+    elif isinstance(irrelevant_fields, str):
+        irrelevant_fields = {irrelevant_fields}
+    else:
+        irrelevant_fields = set(irrelevant_fields)
+
+    try:
+        r1_keys = set(record_1.keys()) - irrelevant_fields
+        r2_keys = set(record_2.keys()) - irrelevant_fields
+    except AttributeError:
+        print("record_1: {} ({})".format(record_1, type(record_1)))
+        print("record_2: {} ({})".format(record_2, type(record_2)))
+        raise
+
+    # Do a sort of rough check for schema equivalence between the documents.
+    if r1_keys != r2_keys:
+        return False
+
+    for i, key in enumerate(r1_keys):
+        logging.debug("Working with key %d/%d, '%s'",
+                      (i + 1), len(r1_keys), key)
+        if record_1[key] != record_2[key] and \
+                (_filter_record_value(record_1[key]) != record_2[key]):
+            logging.debug("For key '%s', r1 value %s\n!= r2 value\n%s",
+                          str(key), str(record_1[key]), str(record_2[key]))
+            return False
+
+    return True
+
+
+
+def _filter_record_value(value):
+    """
+    Highly specialized method for filtering empty values from with values
+    collection within a provenance record. This is a helper function for
+    circumventing a comparison inequality issue. A query result that matches
+    a record seems to omit element(s) with empty value container. For example,
+    {'a': {}, 'b': 'c'} -> {'b': 'c'}
+
+    :param object value: (ideally) dictionary from which to filter entries
+        in which the value is an empty container
+    :return object: filtered mapping if given a dictionary, otherwise the
+        original value, unmodified
+    """
+    try:
+        return {k: v for k, v in value.items() if v}
+    except AttributeError:
+        return value
+
 
 
 def parse_records_text(record_texts):
@@ -338,21 +427,25 @@ def parse_records_text(record_texts):
     :param iterable(str) record_texts: collection of records text
     :return iterable(dict): collection of mappings parsed from text
     """
-    records = []
-    for record_text in record_texts:
-        try:
-            record = json.loads(record_text)
-        except ValueError as e:
-            print "RECORD TEXTS: {}".format(record_texts)
-            print "RECORD TEXT: {}".format(record_text)
-            raise e
-        records.append(record)
-    return records
+    return [json.loads(record_text) for record_text in record_texts]
+
 
 
 def _subprocessify(command_text):
+    """
+    Convert command-line command text into form for subprocess call.
+
+    :param command_text: command-line text command
+    :return list[str]: command text ready to be used
+        as argument for subprocess call
+    """
     return command_text.split(" ")
+
 
 
 def _trim_prefix(prefix):
     return prefix[:-1] if prefix.endswith('*') else prefix
+
+
+
+equal_sans_time = partial(are_equal, irrelevant_fields=TIMESTAMP_KEY)

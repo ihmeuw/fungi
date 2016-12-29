@@ -49,15 +49,18 @@ class _Subparser(object):
         """
         Function, argument names, and description define a CLI subparser.
 
-        :param callable function:
-        :param collections.abc.(str) argument_names: sequence
+        :param callable function: CLI subcommand/program/function to
+            invoke as a result of a command
+        :param collections.abc.(str) argument_names: sequence of names of
+            arguments that the given function accepts
         :param str description: subcommand functional description
         """
-        # TODO: test description derivation from __doc__.
+        # TODO: test the derivation from __doc__ of the description/help.
         self.function = function
         self.argument_names = argument_names
         self.description = \
             description or function.__doc__.strip().split("\n")[0]
+
 
 
 class CLIFactory(object):
@@ -75,7 +78,11 @@ class CLIFactory(object):
         ),
         "num_docs": Argument(
                 flags=("-n", "--num_docs"),
-                help="Limit for number of search hits",
+                help="Limit for number of search hits; this is a 'dumb' "
+                     "filter insofar as it makes no attempt to logically or "
+                     "evenly sample from a partitioned result set. That is, "
+                     "the program will simply take the first num_docs records "
+                     "from the result, disregarding other query components.",
                 type=int
         ),
 
@@ -144,13 +151,12 @@ class CLIFactory(object):
     subparsers = (
         _Subparser(
                 fetch,
-                argument_names=(BASE_ARGS + ("doctype", ))
+                argument_names=BASE_ARGS + ("doctype", )
         ),
         _Subparser(
                 list_stages,
-                argument_names=(("duplicate", "id") +
-                                BASE_ARGS +
-                                LIST_STAGES_TIMESPANS)
+                argument_names=
+                ("duplicate", "id") + BASE_ARGS + LIST_STAGES_TIMESPANS
         ),
         _Subparser(
                 index,
@@ -190,7 +196,7 @@ class CLIFactory(object):
                     # K-V pairs seems to be invalid (e.g., action="store_true"
                     # with type=<anything>, even with <anything>=None.)
                     field: getattr(argument, field)
-                    for field in argument._fields
+                    for field in Argument._fields
                     if field != 'flags' and getattr(argument, field)
                 }
 

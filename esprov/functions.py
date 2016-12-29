@@ -3,13 +3,13 @@
 import argparse
 import logging
 
-from elasticsearch_dsl import Index
+from elasticsearch_dsl import Index, Search
 
 from esprov import \
     DOCTYPE_KEY, DOCUMENT_TYPENAMES, \
     ID_ATTRIBUTE_NAME, TIMESTAMP_KEY
 from esprov.provda_record import ProvdaRecord
-from esprov.utilities import build_search
+from esprov.utilities import build_search, capped, parse_index, parse_num_docs
 
 __author__ = "Vince Reuter"
 __modified__ = "2016-11-21"
@@ -115,7 +115,10 @@ def list_stages(es_client, args):
     # Build, execute, and filter the search.
     search = build_search(es_client, args=args)
     query = search.query("match", **record_type_query_data)
-    result = query.filter("range", **timespan_query_data)
+    if timespan_query_data:
+        result = query.filter("range", **timespan_query_data)
+    else:
+        result = query
 
     # Produce results.
     for response in result.scan():
@@ -168,10 +171,12 @@ def fetch(es_client, args):
 
     :param elasticsearch.Elasticsearch es_client: Elasticsearch client
         to use for query
-    :param argparse.Namespace args: arguments parsed from command line
-    :return elasticsearch_dsl.search.Search: ES client Search instance
+    :param argparse.Namespace args: binding between option name
+        and argument value
+    :return generator(dict): documents matching the fetch request,
+        with each document converted from raw text form to data mapping
     :raises ValueError: if doctype given is unknown, or if document count
-        limit is negative
+        limit is negative, or if given index name matches no known index
     """
 
     funcpath = "{}.{}".format(__modname__, "fetch")
@@ -192,7 +197,7 @@ def fetch(es_client, args):
     search = build_search(es_client, args=args)
 
     # Assign the query mapping (bind doctype to match as needed.)
-    if not args.doctype:
+    if args.doctype is None:
         # No doctype --> grab all records/documents.
         logger.debug("No doctype")
         query_mapping = {}
@@ -204,14 +209,53 @@ def fetch(es_client, args):
         logger.debug("Doctype: %s", args.doctype)
         query_mapping = {DOCTYPE_KEY: args.doctype}
 
+    # Ensure that we're given a valid index.
+    if args.index not in es_client.indices.get_alias() \
+            and args.index != "_all":
+        # "_all" is the fallback match-all index value.
+        # That default applies when no index is given, so
+        # by the time index argument is here, it should be set to
+        # either the fallback/catch-all value or to a known index.
+        raise ValueError("Unknown index: {} ({})".format(args.index,
+                                                         type(args.index)))
+
     # TODO: Properly filter result; are hits ordered by score?
     # TODO: empty query is logical here, but is it valid?
     # TODO: make use of the count() member of Search for testing.
 
-    logger.debug("query_mapping: %s", str(query_mapping))
-    result = search.query("match", **query_mapping)
+    if query_mapping:
+        logger.debug("query_mapping: %s", str(query_mapping))
+        result = search.query("match", **query_mapping)
+        hits = result.scan()
+    else:
+        #logger.debug("Executing 'wildcard' query on %s field", DOCTYPE_KEY)
+        #result = search.query("wildcard", **{DOCTYPE_KEY: "*"})
+        logger.debug("No query mapping --> doing direct search...")
+        resolved_index = parse_index(args)
+        logger.debug("Parsed index name %s from %s", resolved_index, str(args))
 
-    for hit in result.scan():
+        # DEBUG
+        #logger.debug("USING EMPTY SEARCH FOR DEBUGGING")
+        #hits = Search()
+
+        # TODO: uncomment
+        logger.debug("Searching index '%s'", resolved_index)
+        #logger.debug("Client indices: %s", ", ".join(es_client.indices.get_alias().keys()))
+        """
+        logger.debug(
+            "%s %s in %s",
+            args.index,
+            "IS" if args.index
+                    in es_client.indices.get_alias().keys() else "NOT",
+            ", ".join(es_client.indices.get_alias().keys())
+        )
+        """
+        hits = Search(index=resolved_index)[:parse_num_docs(args)]
+        #hits = result["hits"]["hits"]
+
+        logger.debug("hits: %s (%s)", str(hits), type(hits))
+
+    for hit in capped(items=hits, limit=args.num_docs):
         yield hit.to_dict()
 
 

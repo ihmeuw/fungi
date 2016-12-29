@@ -22,15 +22,14 @@ if __name__ == "__main__":
 
     logger = logging.getLogger(__modname__)
 
+    # TODO: handle host configurability.
+    es_client = Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
+
     parser = CLIFactory.get_parser()
     args = parser.parse_args()
     logger.info("Args: {}".format(args))
 
-    # TODO: handle host configurability.
-
-    es_client = Elasticsearch(hosts=[{"host": HOST, "port": PORT}])
     logger.info("Querying elasticsearch...")
-
     result = args.func(es_client, args)
 
     try:

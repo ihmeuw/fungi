@@ -51,12 +51,13 @@ MAPPING.field("port", "integer")
 MAPPING.field("@fields", "object", enabled=False)
 
 
+
 class ProvdaRecord(DocType):
     """ Representation of a single provda-created provenance record. """
 
 
     @classmethod
-    def init(cls, index, using):
+    def init(cls, index, using=None):
         """
         Add provda mapping to ES index with ProvdaRecord.init(<index_name>);
         require provision of both index and client here, unlike superclass.
@@ -65,14 +66,17 @@ class ProvdaRecord(DocType):
         :param elasticsearch.client.Elasticsearch | str using: ES client or
             alias for one to use
         """
+        # Note that this signature does not match that of superclass.
+        # This is because the superclass requires neither argument,
+        # but we want to be more restrictive w.r.t.
         super(ProvdaRecord, cls).init(index=index, using=using)
 
 
     class Meta:
         """ Flexibility and metadata handling for records. """
 
-        all = MetaField(enabled=False)  # We don't need "catch-all" '_all'
-        dynamic = MetaField("strict")   # Raise error for non-standard record,
+        all = MetaField(enabled=False)   # We don't need "catch-all" '_all'
+        dynamic = MetaField("strict")    # Raise error for non-standard record.
 
         # Critically, we fix the mapping for records based on provda format.
         mapping = MAPPING
