@@ -86,6 +86,7 @@ def capped(items, limit):
     limit = int(limit)
 
     if limit < 1:
+        # It makes no sense to filter to fewer than one result.
         raise IllegalItemsLimitException(limit, min=1)
     else:
         logging.debug("Yielding %d items", limit)
@@ -94,8 +95,16 @@ def capped(items, limit):
 
 
 class IllegalItemsLimitException(Exception):
-    """ Represent case of illogical items count for iterable. """
+    """ A user may wish to bound the number of results from a query or
+    operation; that bound must be nonnegative, and in some cases it may
+    be a positive value. This exception represents an illogical bound. """
 
     def __init__(self, limit, min=ITEMS_COUNT_LOWER_BOUND):
+        """
+        The provided limit and the bound on the limit define the exception.
+
+        :param int limit: results limit given by user
+        :param int min: minimum logical bound to provide
+        """
         reason = "Lower bound for items limit is {}; got {}".format(min, limit)
         super(IllegalItemsLimitException, self).__init__(reason)
