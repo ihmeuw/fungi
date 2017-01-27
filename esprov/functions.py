@@ -57,7 +57,6 @@ LOGGER = logging.getLogger(__modname__)
 
 # Cases for listing stages:
 # 1 -- simplest: list a lag (interpret from current)
-# The lag can have day, hour, minute components
 # TODO: decide whether or not to require one of the lag components.
 def list_stages(es_client, args):
     """
@@ -78,33 +77,50 @@ def list_stages(es_client, args):
         full record or as a distilled representation (like text hash-esque ID)
     """
 
-    # TODO: incorporate this if it's decided to require >= 1 lag spec.
+    # TODO: incorporate this if it's decided to require >= 1 lag spec,
+    # as it will effect ValueError if no time lag option/argument is given.
     """
     if all([arg is None for arg in LIST_STAGES_TIMESPANS]):
-        raise TypeError(
+        raise ValueError(
             "To use list_stages, at least one of {} must be specified "
             "via the CLI.".format(", ".join(LIST_STAGES_TIMESPANS))
         )
     """
 
-    # TODO 1: support arguments about what other data in addition to
-    # TODO 1 (continued) stage names should be available.
-    # TODO 2: support specification of whether duplicate entries
-    # TODO 2 (continued) should be provided. (set/list uniquefaction)
+    assertion_statement = "Time lag span value must be nonnegative integer."
 
-    # Build up the time text filter.
+    # TODO 1: support extend this sort of thing beyond stages (other function)
+    # TODO 2: support filter/reduction based on duplicates.
+
     if all([arg is None for arg in LIST_STAGES_TIMESPANS]):
         # Each supported timespan bound to null --> no time constraint.
         timespan_query_data = {}
     else:
-        # Elasticsearch supports a time offset from current by
-        # providing something like "now-1d-1H" to mean 25 hours earlier.
+        # Build up the time text filter.
+        # Elasticsearch supports a time offset from current by providing
+        # something like "now-1d-1H" to mean 25 hours before than now.
+
+        # Native Elasticsearch format
         time_text = "now"
+
+        # Consider each time lag span in turn, interrogating arguments parsed
+        # from the command line for a value for that time lag span.
         for time_param_name, es_time_char in TIME_CHAR_BY_CLI_PARAM.items():
             this_time_span_arg = getattr(args, time_param_name)
+
+            # Some (likely most/all) time lag span options won't be present.
             if this_time_span_arg is None:
                 continue
+
+            # Magnitude of lag must be nonnegative integer.
+            try:
+                assert int(this_time_span_arg) >= 0, assertion_statement
+            except (AssertionError, ValueError, TypeError):
+                raise ValueError(assertion_statement)
+
+            # The Elasticsearch format is -<magnitude><lag character>
             time_text += "-{}{}".format(this_time_span_arg, es_time_char)
+
         # Bind Elasticsearch timespan key-value pairs to the timestamp key.
         # ES uses "now" to indicate current, and we want to filter to >= lag.
         timespan_query_data = {TIMESTAMP_KEY: {"gte": time_text, "lt": "now"}}
@@ -112,15 +128,17 @@ def list_stages(es_client, args):
     # Match on code document instances.
     record_type_query_data = {DOCTYPE_KEY: "activity"}
 
-    # Build, execute, and filter the search.
+    # Build and execute query.
     search = build_search(es_client, args=args)
     query = search.query("match", **record_type_query_data)
+
+    # Filter result(s) based on timespan of interest.
     if timespan_query_data:
         result = query.filter("range", **timespan_query_data)
     else:
         result = query
 
-    # Produce results.
+    # Produce results as mappings rather than raw text or ADT instance.
     for response in result.scan():
         yield response[ID_ATTRIBUTE_NAME] if args.id else response.to_dict()
 
@@ -146,19 +164,24 @@ def index(es_client, args):
     LOGGER.debug("Operation name is %s", str(operation_name))
 
     if operation_name in INDEX_CREATION_NAMES:
+        # ProvdaRecord extends elasticsearch_dsl.document.DocType to define
+        # mapping between incoming text record and provenance record fields.
         LOGGER.debug("Inserting index %s", str(args.index_target))
         ProvdaRecord.init(index=args.index_target, using=es_client)
+
     elif operation_name in INDEX_DELETION_NAMES:
-        LOGGER.debug("Removing index %s", str(args.index_target))
         # Ignore elasticsearch.exceptions.RequestError (400);
         # also ignore elasticsearch.exceptions.NotFoundError (404).
+        LOGGER.debug("Removing index %s", str(args.index_target))
         es_client.indices.delete(index=args.index_target, ignore=[400, 404])
+
     elif operation_name in INDEX_EXISTENCE_NAMES:
         LOGGER.debug("Checking existence of index %s", str(args.index_target))
         exists = Index(args.index_target, using=es_client).exists()
         LOGGER.debug("{} existence: {} ({})".format(args.index_target,
                                                     exists, type(exists)))
         return exists
+
     else:
         raise ValueError("Unexpected index operation: {} ({})".
                          format(operation_name, type(operation_name)))
@@ -183,20 +206,9 @@ def fetch(es_client, args):
     logger = logging.getLogger(funcpath)
     logger.debug("In: {}".format(funcpath))
 
-    # TODO: ensure docstring correctness.
-
-    # First variety of fetch is for noun (agent, activity, entity).
-    # The other is the fetch of a relationship.
-    # Let's start with noun.
-    # Entity options: activity, agent, entity
-
-    # TODO: validate match kwargs based on doctype
-
-    # TODO: properly construct Search instance.
-
     search = build_search(es_client, args=args)
 
-    # Assign the query mapping (bind doctype to match as needed.)
+    # Assign mapping for query based on targeted doctype.
     if args.doctype is None:
         # No doctype --> grab all records/documents.
         logger.debug("No doctype")
@@ -257,39 +269,3 @@ def fetch(es_client, args):
 
     for hit in capped(items=hits, limit=args.num_docs):
         yield hit.to_dict()
-
-
-
-def list_stages_TODO_stub(es_client, args, datetime_parser, datetime_writer):
-    """
-    Determine the stages that have run within past given time.
-
-    :param elasticsearch.client.Elasticsearch es_client: Elasticsearch client
-        with which to execute the search query
-    :param argparse.Namespace args: binding between parameter name and
-        argument value
-    :param function(str) -> datetime.datetime datetime_parser: function with
-        which to parse text representation of datetime and produce datetime
-    :param function(str) -> datetime.datetime datetime_writer: function with
-        which to write text representation of datetime
-    :return collections.abc.Iterable(str):
-    """
-
-    # TODO: start with assumption of days, then add flexibility via options.
-    # TODO: return should be the script & affected directories or similar.
-    # There are relatively well-defined steps here.
-    # Parse user input (determine/restrict datetime format.
-    # CLI may allow its own sort of time format.
-    # CLI should definitely support the native provda time format, though.
-    # The native provda time format accords with RFC3339?
-    # Perform any necessary translation between user input time and provda.
-    # Form query for elasticsearch.
-    # Send/execute query.
-    # Parse and format result(s).
-
-    # TODO: for the datetime range, ES provides support:
-    # https://www.elastic.co/guide/en/elasticsearch/guide/current/_ranges.html.
-    # The datetime format in the provda logs is: 2016-11-06T11:04:25.268Z
-    # TODO: potential design upgrade: plugin functions
-    # With plugins, custom datetime specification strategy could be used.
-    pass

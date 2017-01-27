@@ -16,19 +16,6 @@ __email__ = "vr24@uw.edu"
 __modname__ = "esprov.bin.cli"
 
 
-# TODO: remove notes.
-# Relevant components of query that is sent to ES:
-# 1 -- "Query" (JSON object)
-# 2 -- "Size"
-# 3 -- "Fields" (document fields to include in result) -->
-# TODO: from each hit, or from result object?
-
-# Others, unsupported here
-# 1 -- "From" --> Offset into results (default 0)
-# 2 -- "Facets" --> Summary information about specific field(s) in data
-# 3 -- "Filter" -- > Special case to apply filter/query to results not facets
-
-
 # Mechanism to define argparse argument(s) for particular subcommand.
 Argument = namedtuple(
     "Argument",
@@ -45,32 +32,37 @@ Argument.__new__.__defaults__ = (None, ) * len(Argument._fields)
 class _Subparser(object):
     """ Argument parser for specific CLI function """
 
-    def __init__(self, function, argument_names=(), description=""):
+    def __init__(self, function, argument_names=tuple(), description=""):
         """
         Function, argument names, and description define a CLI subparser.
 
         :param callable function: CLI subcommand/program/function to
             invoke as a result of a command
-        :param collections.abc.(str) argument_names: sequence of names of
+        :param collections.abc.Iterable(str) argument_names: names of
             arguments that the given function accepts
-        :param str description: subcommand functional description
+        :param str description: subcommand functional description, optional;
+            if absent, description will be created from parsing the
+            function's __doc__ attribute
         """
         # TODO: test the derivation from __doc__ of the description/help.
         self.function = function
         self.argument_names = argument_names
+        # Describe the
         self.description = \
             description or function.__doc__.strip().split("\n")[0]
 
 
 
 class CLIFactory(object):
-    """ Factory for CLI subcommand parser """
+    """ Create CLI subcommand program parsers.
 
-    # Subcommand-agnostic argument
+    Design here is largely informed by the way in which the Apache Airflow
+    project provides this sort of functionality.
+    """
+
     arguments = {
 
         # Basic arguments shared and valid for EVERY CLI function
-        # TODO: determine if this will work given index() function.
         "index": Argument(
                 flags=("-i", "--index"),
                 help="Index to query",
@@ -97,9 +89,10 @@ class CLIFactory(object):
                 action="store_true"
         ),
 
-        # "list_stages" family of arguments
-        # Obviously, there's more intricate logic w.r.t. time.
-        # TODO: write corner case tests to ensure that there's wonky handling.
+        # 'list_stages' family of arguments
+        # Time lags are specified acc. to Elasticsearch format & "date math":
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/
+        # common-options.html#date-math
         "months": Argument(
                 flags=("--months", ),
                 help="Integer number of months of lag"
@@ -130,7 +123,7 @@ class CLIFactory(object):
                 action="store_true"
         ),
 
-        # index subcommand
+        # Arguments relevant to the 'index' subcommand
         "index_operation": Argument(
                 # When it's used, index_operation is required.
                 flags=("index_operation", ),
@@ -145,20 +138,29 @@ class CLIFactory(object):
 
     }
 
-    # Shared and valid for all CLI functions.
+    # Shared and valid for all CLI functions
     BASE_ARGS = ("index", "num_docs")
 
+    # There should be a subparser for each CLI function that is supported.
     subparsers = (
         _Subparser(
+                # Document type (in provenance model) is a
+                # valid filter for the 'fetch' subcommand.
                 fetch,
                 argument_names=BASE_ARGS + ("doctype", )
         ),
         _Subparser(
+                # Document ID and whether or nor to retain duplicate
+                # documents in the result(s) are valid additional
+                # arguments for the 'list_stages' subcommand.
                 list_stages,
                 argument_names=
                 ("duplicate", "id") + BASE_ARGS + LIST_STAGES_TIMESPANS
         ),
         _Subparser(
+                # The name of the operation to perform and the name of the
+                # index on/in which to perform it are REQUIRED arguments
+                # for the 'index' subcommand.
                 index,
                 argument_names=("index_operation", "index_target"),
         )
@@ -170,7 +172,7 @@ class CLIFactory(object):
         """
         Create command-line argument parser for a CLI run.
 
-        :return argparse.ArgumentParser: parser for CLI run.
+        :return argparse.ArgumentParser: parser for CLI run
         """
 
         # Require subcommand to supplement basic executable name.

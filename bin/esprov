@@ -18,7 +18,7 @@ __modname__ = "esprov.bin.esprov"
 
 
 if __name__ == "__main__":
-    """ Command should be of the form: esprov <operation> <type> <query> """
+    """ Command should be of the form: esprov <subcommand> <flags/options> """
 
     logger = logging.getLogger(__modname__)
 
